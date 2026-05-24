@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>听见</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="https://i.postimg.cc/Qd7hz2Qg/image-1779534239221.png">
+<link rel="apple-touch-icon" href="https://i.postimg.cc/Qd7hz2Qg/image-1779534239221.png">
+    <style>@import url("https://fontsapi.zeoseven.com/36/main/result.css");    
+
+* {
+    font-family: "TW-Kai", sans-serif;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: linear-gradient(145deg, #e0eafc 0%, #f0fcff 100%);
+    font-family: "LXGW Neo ZhiSong", 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #f0fcff;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+.chat-container {
+    width: 100%;
+    max-width: 600px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 25px 45px rgba(0,0,0,0.1);
+    border-radius: 0;
+    margin: 0 auto;
+    overflow: hidden;  /* 添加这一行 */
+}
+
+/* 头部 */
+.chat-header {
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(208, 223, 230, 0.4);
+}
+.settings-icon, .history-icon {
+    background: rgba(255, 255, 255, 0);
+    backdrop-filter: blur(8px);
+    width: 42px;
+    height: 42px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    color: #c3d7df;
+}
+.settings-icon:hover, .history-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.96);
+}
+.char-name {
+    font-weight: 600;
+    font-size: 18px;
+    background: rgba(255, 255, 255, 0);
+    backdrop-filter: blur(8px);
+    padding: 6px 16px;
+    border-radius: 40px;
+    letter-spacing: 0.5px;
+    color: #d3dbe2;
+}
+
+/* 中间圆形动画区 */
+.visualizer-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 20px;
+}
+
+/* 语音波浪容器 */
+.orb {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+}
+
+/* 毛玻璃圆点 */
+.wave-dot {
+    width: 16px;
+    height: 16px;
+    background: rgba(211, 225, 239, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 8px rgba(163, 187, 219, 0.4);
+}
+
+/* 语音激活时的动画 - 无限循环 */
+.orb.playing .wave-dot {
+    animation: wavePulse 0.8s ease-in-out infinite alternate;
+}
+
+/* 每个圆点不同的延迟，形成波浪效果 */
+.orb.playing .wave-dot:nth-child(1) { animation-delay: 0s; animation-duration: 0.6s; }
+.orb.playing .wave-dot:nth-child(2) { animation-delay: 0.07s; animation-duration: 0.65s; }
+.orb.playing .wave-dot:nth-child(3) { animation-delay: 0.14s; animation-duration: 0.7s; }
+.orb.playing .wave-dot:nth-child(4) { animation-delay: 0.21s; animation-duration: 0.75s; }
+.orb.playing .wave-dot:nth-child(5) { animation-delay: 0.28s; animation-duration: 0.8s; }
+.orb.playing .wave-dot:nth-child(6) { animation-delay: 0.21s; animation-duration: 0.75s; }
+.orb.playing .wave-dot:nth-child(7) { animation-delay: 0.14s; animation-duration: 0.7s; }
+.orb.playing .wave-dot:nth-child(8) { animation-delay: 0.07s; animation-duration: 0.65s; }
+.orb.playing .wave-dot:nth-child(9) { animation-delay: 0s; animation-duration: 0.6s; }
+
+/* 关键帧：放大后缩小，来回往复 */
+@keyframes wavePulse {
+    0% {
+        transform: scale(1);
+        background: rgba(138, 171, 204, 0.6);
+        box-shadow: 0 0 8px rgba(138, 171, 204, 0.6);
+    }
+    50% {
+        transform: scale(2.2);
+        background: rgba(138, 171, 204, 0.6);
+        box-shadow: 0 0 20px rgba(138, 171, 204, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        background: rgba(138, 171, 204, 0.6);
+        box-shadow: 0 0 8px rgba(138, 171, 204, 0.6);
+    }
+}
+
+/* 静音时的柔和呼吸效果 */
+.orb:not(.playing) .wave-dot {
+    animation: gentleBreath 3s ease-in-out infinite alternate;
+}
+
+@keyframes gentleBreath {
+    0% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+    100% {
+        transform: scale(1.3);
+        opacity: 0.8;
+    }
+}
+
+/* 圆点大小渐变的群组效果（中间大两边小） */
+.wave-dot:nth-child(1) { width: 10px; height: 10px; }
+.wave-dot:nth-child(2) { width: 13px; height: 13px; }
+.wave-dot:nth-child(3) { width: 17px; height: 17px; }
+.wave-dot:nth-child(4) { width: 21px; height: 21px; }
+.wave-dot:nth-child(5) { width: 25px; height: 25px; }
+.wave-dot:nth-child(6) { width: 21px; height: 21px; }
+.wave-dot:nth-child(7) { width: 17px; height: 17px; }
+.wave-dot:nth-child(8) { width: 13px; height: 13px; }
+.wave-dot:nth-child(9) { width: 10px; height: 10px; }
+
+/* 字幕区域 - 纯文字无背景 */
+.subtitle-box {
+    width: 90%;
+    padding: 20px 24px;
+    text-align: center;
+}
+.en-subtitle {
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: #1e3a8a;
+    word-break: break-word;
+    margin-bottom: 12px;
+    font-family: 'TW-Kai', monospace;
+}
+.cn-subtitle {
+    font-size: 1rem;
+    color: #475569;
+    margin-top: 8px;
+    word-break: break-word;
+}
+
+/* 底部输入区 */
+.input-area {
+    padding: 16px 20px 10px;
+    background: rgba(255, 255, 255, 0);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(100, 116, 139, 0.2);
+}
+.input-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+textarea {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 28px;
+    padding: 14px 18px;
+    font-size: 1rem;
+    color: #1e293b;
+    resize: none;
+    font-family: inherit;
+    transition: 0.2s;
+    max-height: 120px;
+}
+textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: rgba(255, 255, 255, 0.95);
+}
+button {
+    background: #b5bdc6;
+    border: none;
+    border-radius: 40px;
+    padding: 14px 22px;
+    font-weight: 600;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+button:active { transform: scale(0.96); background: #2563eb; }
+
+/* 模态框通用 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.2s;
+}
+.modal-overlay.active {
+    visibility: visible;
+    opacity: 1;
+}
+.modal-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    border-radius: 40px;
+    padding: 24px;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.modal-card h3 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+    border-left: 4px solid #3b82f6;
+    padding-left: 16px;
+    color: #1e3a8a;
+}
+.setting-group {
+    margin-bottom: 24px;
+}
+.setting-group label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: #475569;
+    font-weight: 500;
+}
+input, select, textarea.modal-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 28px;
+    color: #1e293b;
+    font-size: 0.9rem;
+}
+.range-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.range-row input {
+    flex: 1;
+}
+.button-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+.button-row button {
+    flex: 1;
+    background: #94a3b8;
+}
+.button-row button.primary {
+    background: #3b82f6;
+}
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 16px 0;
+}
+.history-item {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-left: 3px solid #3b82f6;
+}
+.history-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+.history-text {
+    font-size: 0.85rem;
+    word-break: break-word;
+    color: #1e293b;
+}
+.batch-delete {
+    background: #ef4444;
+    margin-top: 10px;
+}
+.empty-history {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+}
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+hr {
+    border-color: rgba(59, 130, 246, 0.2);
+    margin: 12px 0;
+}
+.small-note {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 6px;
+}
+.voice-slider {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.voice-slider span {
+    min-width: 40px;
+    color: #475569;
+}
+.test-btn {
+    background: #475569;
+    margin-top: 8px;
+    padding: 8px;
+    justify-content: center;
+}
+button.icon-btn {
+    background: transparent;
+    padding: 8px;
+}
+
+/* 聊天背景样式 - 无遮罩版本 */
+.chat-container {
+    position: relative;
+    overflow: hidden;
+    background: transparent !important;
+}
+.chat-bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+    pointer-events: none;
+}
+/* 确保所有内容在背景之上 */
+.chat-header, .visualizer-area, .input-area, .subtitle-box, .orb {
+    position: relative;
+    z-index: 2;
+}
+/* 让玻璃效果卡片背景半透明，透出图片 */
+.chat-container .chat-header,
+.chat-container .visualizer-area,
+.chat-container .input-area {
+    background: transparent;
+}
+.chat-container .subtitle-box {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    border-radius: 32px;
+}
+.chat-container textarea {
+    background: rgba(255, 255, 255, 0.85);
+}
+.lang-switch-btn {
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+.lang-switch-btn:active {
+    transform: scale(0.95);
+}
+.lang-menu {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-radius: 28px;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 200;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    min-width: 130px;
+}
+.lang-option {
+    padding: 10px 16px;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #1e293b;
+}
+.lang-option:hover {
+    background: rgba(59, 130, 246, 0.2);
+}
+.lang-option.active {
+    background: #3b82f6;
+    color: white;
+}
+</style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="settings-icon" id="openSettingsBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div class="char-name" id="headerCharName">ECHO AI</div>
+        <div class="history-icon" id="openHistoryBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
+        </div>
+    </div>
+
+    <div class="visualizer-area">
+        <div class="orb" id="voiceOrb">
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+    <div class="wave-dot"></div>
+</div>
+        <div class="subtitle-box">
+            <div class="en-subtitle" id="subtitleEn"> Hello, I'm your AI companion</div>
+            <div class="cn-subtitle" id="subtitleCn"> 你好，我是你的AI伙伴</div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+    <button id="languageSwitchBtn" class="lang-switch-btn" style="background: #94a3b8; padding: 14px 16px; min-width: 30px;">
+         EN
+    </button>
+    <textarea id="userInput" rows="1" placeholder="Message AI... (any language)"></textarea>
+    <button id="sendBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send
+    </button>
+</div>
+    </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3> Settings</h3>
+        <div class="setting-group">
+            <label> LLM 设定</label>
+            <input type="text" id="apiUrl" placeholder="API Base URL (eg: https://api.deepseek.com/v1)" value="">
+            <input type="password" id="apiKey" placeholder="API Key" style="margin-top: 8px;">
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <select id="modelSelect" style="flex:1"><option value="">Load models</option></select>
+                <button id="fetchModelsBtn" style="width: auto; padding: 8px 14px;">Refresh</button>
+            </div>
+            <div class="range-row" style="margin-top: 12px;">
+                <span>Temp: </span><input type="range" id="tempSlider" min="0" max="2" step="0.05" value="0.9"><span id="tempVal">0.9</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label> TTS 设定 (MiniMax)</label>
+            <input type="password" id="ttsApiKey" placeholder="MiniMax API Key">
+            <input type="text" id="ttsVoiceId" placeholder="Voice ID" value="Chinese (Mandarin)_Lyrical_Voice">
+            <div style="display: flex; gap: 8px; margin: 8px 0;">
+                <select id="ttsModel" style="flex:1"><option value="speech-2.8-hd">speech-2.8-hd</option><option value="speech-2.8-turbo">speech-2.8-turbo</option></select>
+                <select id="ttsFormat"><option value="mp3">MP3</option><option value="wav">WAV</option></select>
+            </div>
+            <div class="voice-slider"><span>Speed</span><input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0"><output id="ttsSpeedVal">1.0</output></div>
+            <div class="voice-slider"><span>Volume</span><input type="range" id="ttsVol" min="0" max="2.0" step="0.1" value="1.0"><output id="ttsVolVal">1.0</output></div>
+            <div class="voice-slider"><span>Pitch</span><input type="range" id="ttsPitch" min="-12" max="12" step="1" value="0"><output id="ttsPitchVal">0</output></div>
+            <div class="flex-between"><input type="text" id="ttsTestText" placeholder="Test phrase" style="flex:1"><button id="ttsTestBtn" class="test-btn">Preview</button></div>
+        </div>
+<!-- 在 TTS 设定模块后面、{{char}}设定模块前面插入 -->
+<div class="setting-group">
+    <label> 聊天背景设定</label>
+    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+        <div id="bgPreview" style="width: 60px; height: 60px; border-radius: 16px; background: #ffffff; border: 2px solid #334155; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"></div>
+        <div style="flex: 1; display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="selectBgBtn" type="button" style="background: #475569; padding: 8px 16px;"> 选择图片</button>
+            <button id="resetBgBtn" type="button" style="background: #334155; padding: 8px 16px;"> 重置</button>
+        </div>
+    </div>
+    <input type="file" id="bgImageInput" accept="image/*" style="display: none;">
+    <div class="small-note">支持 JPG、PNG 格式，图片会自动适配背景</div>
+</div>
+        <div class="setting-group">
+            <label> {{char}} 设定</label>
+            <input type="text" id="charName" placeholder="AI 名字" value="Echo">
+            <textarea id="charPersona" rows="2" placeholder="性格/人设 (eg: witty, warm, curious about tech)" style="margin-top:6px">Witty, kind, and loves deep conversation. A bit dramatic sometimes.</textarea>
+            <textarea id="charLore" rows="2" placeholder="关于{{char}}的小事..." style="margin-top:6px">Loves stargazing, secretly a poet, caffeine addict.</textarea>
+        </div>
+        <div class="setting-group">
+            <label> {{user}} 设定</label>
+            <input type="text" id="userName" placeholder="你的名字" value="You">
+            <textarea id="userPersona" rows="2" placeholder="关于你的背景/性格...">Curious, creative, enjoys music and stories.</textarea>
+            <textarea id="userLore" rows="2" placeholder="关于你的小事...">Always stays up late, loves sci-fi novels, good at cooking.</textarea>
+        </div>
+        <div class="button-row">
+            <button id="closeSettings">Cancel</button>
+            <button id="saveSettingsBtn" class="primary">Save & Apply</button>
+        </div>
+    </div>
+</div>
+
+<!-- 历史记录弹窗 -->
+<div id="historyModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px;">
+        <h3> Chat History</h3>
+        <div id="historyListContainer" class="history-list"></div>
+        <div class="button-row">
+            <button id="closeHistoryBtn">Close</button>
+            <button id="batchDeleteHistoryBtn" class="batch-delete">Delete Selected</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 全局状态 ----------
+    let llmConfig = { url: '', key: '', model: '', temperature: 0.9 };
+    let ttsConfig = { apiKey: '', voiceId: 'Chinese (Mandarin)_Lyrical_Voice', model: 'speech-2.8-hd', format: 'mp3', speed: 1.0, vol: 1.0, pitch: 0 };
+    let charConfig = { name: 'Echo', persona: 'Witty, kind, loves deep conversation.', lore: 'Loves stargazing, secretly a poet.' };
+    let userConfig = { name: 'You', persona: 'Curious, creative, enjoys music.', lore: 'Stays up late, loves sci-fi.' };
+
+    let chatHistory = [];  // [{role, content, timestamp, enText?}]
+// 语种配置
+let currentLanguage = 'en';  // 默认英语
+const languages = {
+    'en': { name: 'English', label: 'EN', systemName: 'English' },
+    'fr': { name: 'Français', label: 'FR', systemName: 'French' },
+    'ko': { name: '한국어', label: 'KO', systemName: 'Korean' },
+    'ja': { name: '日本語', label: 'JA', systemName: 'Japanese' },
+    'yue': { name: '粤语', label: '粤', systemName: 'Cantonese' },
+    'zh': { name: '普通话', label: '中', systemName: 'Mandarin Chinese' }
+};
+    let isAiResponding = false;
+    let currentAudio = null;
+    let orbElement = document.getElementById('voiceOrb');
+    let subtitleEn = document.getElementById('subtitleEn');
+    let subtitleCn = document.getElementById('subtitleCn');
+// 在 let chatHistory = []; 后面添加
+let bgImageData = null;  // 存储背景图片 base64 或 null
+    // 辅助函数
+    function saveAllConfig() {
+        localStorage.setItem('llm_config', JSON.stringify(llmConfig));
+        localStorage.setItem('tts_config', JSON.stringify(ttsConfig));
+        localStorage.setItem('char_config', JSON.stringify(charConfig));
+        localStorage.setItem('user_config', JSON.stringify(userConfig));
+        localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+        updateHeaderName();
+    }
+
+    function loadAllConfig() {
+        try {
+            let saved = localStorage.getItem('llm_config'); if(saved) llmConfig = JSON.parse(saved);
+            saved = localStorage.getItem('tts_config'); if(saved) ttsConfig = JSON.parse(saved);
+            saved = localStorage.getItem('char_config'); if(saved) charConfig = JSON.parse(saved);
+            saved = localStorage.getItem('user_config'); if(saved) userConfig = JSON.parse(saved);
+            saved = localStorage.getItem('chat_history'); if(saved) chatHistory = JSON.parse(saved);
+        } catch(e) { console.warn(e); }
+        // 同步UI
+        document.getElementById('apiUrl').value = llmConfig.url || '';
+        document.getElementById('apiKey').value = llmConfig.key || '';
+        document.getElementById('tempSlider').value = llmConfig.temperature;
+        document.getElementById('tempVal').innerText = llmConfig.temperature;
+        document.getElementById('charName').value = charConfig.name;
+        document.getElementById('charPersona').value = charConfig.persona;
+        document.getElementById('charLore').value = charConfig.lore;
+        document.getElementById('userName').value = userConfig.name;
+        document.getElementById('userPersona').value = userConfig.persona;
+        document.getElementById('userLore').value = userConfig.lore;
+        // TTS
+        document.getElementById('ttsApiKey').value = ttsConfig.apiKey || '';
+        document.getElementById('ttsVoiceId').value = ttsConfig.voiceId;
+        document.getElementById('ttsModel').value = ttsConfig.model;
+        document.getElementById('ttsFormat').value = ttsConfig.format;
+        document.getElementById('ttsSpeed').value = ttsConfig.speed;
+        document.getElementById('ttsSpeedVal').innerText = ttsConfig.speed;
+        document.getElementById('ttsVol').value = ttsConfig.vol;
+        document.getElementById('ttsVolVal').innerText = ttsConfig.vol;
+        document.getElementById('ttsPitch').value = ttsConfig.pitch;
+        document.getElementById('ttsPitchVal').innerText = ttsConfig.pitch;
+        updateHeaderName();
+    }
+// 在 loadAllConfig 函数末尾（updateHeaderName(); 之前）添加
+saved = localStorage.getItem('chat_bg_image');
+if (saved && saved !== 'null') {
+    bgImageData = saved;
+    applyBackgroundImage(bgImageData);
+} else {
+    bgImageData = null;
+    resetBackgroundToWhite();
+}
+    function updateHeaderName() { document.getElementById('headerCharName').innerText = charConfig.name.toUpperCase(); }
+
+    // 模型动态拉取 (DeepSeek / OpenAI兼容)
+    async function fetchModels() {
+        let url = document.getElementById('apiUrl').value.trim();
+        let key = document.getElementById('apiKey').value.trim();
+        if (!url || !key) { alert('Please fill API URL and Key first'); return; }
+        let select = document.getElementById('modelSelect');
+        select.innerHTML = '<option>Loading...</option>';
+        try {
+            let base = url.replace(/\/+$/, '');
+            if (!base.endsWith('/v1')) base += '/v1';
+            let modelsUrl = base + '/models';
+            const resp = await fetch(modelsUrl, { headers: { 'Authorization': `Bearer ${key}` } });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            let models = data.data || [];
+            if (!Array.isArray(models)) models = [];
+            select.innerHTML = '';
+            for (let m of models) {
+                let id = m.id || m;
+                if (typeof id === 'string' && !id.includes('embed') && !id.includes('tts')) {
+                    let opt = document.createElement('option');
+                    opt.value = id; opt.textContent = id;
+                    select.appendChild(opt);
+                }
+            }
+            if (select.options.length === 0) select.innerHTML = '<option value="">No chat models found</option>';
+        } catch(e) { console.error(e); select.innerHTML = '<option value="">Failed to load</option>'; alert('Error loading models, check your API URL'); }
+    }
+
+    async function speakText(text, onEnd) {
+    if (!ttsConfig.apiKey) { 
+        console.warn('TTS key missing'); 
+        if(onEnd) onEnd(); 
+        return; 
+    }
+    if (currentAudio) { 
+        currentAudio.pause(); 
+        currentAudio = null; 
+    }
+    
+    orbElement.classList.add('playing');
+    
+    let cleanedText = cleanTextForTTS(text);
+    console.log("Original text:", text);
+    console.log("Cleaned for TTS:", cleanedText);
+    
+   // 根据当前语言设置 language_boost（使用具体语言代码）
+let languageBoost = null;
+const languageBoostMap = {
+    'yue': 'Chinese,Yue',      // 粤语
+    'zh': 'Chinese',            // 普通话
+    'en': 'English',            // 英语
+    'fr': 'French',             // 法语
+    'ko': 'Korean',             // 韩语
+    'ja': 'Japanese'            // 日语
+    // 其他语种可根据需要添加
+};
+if (languageBoostMap[currentLanguage]) {
+    languageBoost = languageBoostMap[currentLanguage];
+    console.log("启用 language_boost:", languageBoost, "for language:", currentLanguage);
+}
+    
+    try {
+        let requestBody = {
+            model: ttsConfig.model,
+            text: cleanedText,
+            stream: false,
+            voice_setting: { 
+                voice_id: ttsConfig.voiceId, 
+                speed: ttsConfig.speed,
+                vol: ttsConfig.vol,
+                pitch: ttsConfig.pitch
+            },
+            audio_setting: { 
+                sample_rate: 32000, 
+                bitrate: 128000, 
+                format: ttsConfig.format, 
+                channel: 2 
+            },
+            pronunciation_dict: { tone: [] },
+            subtitle_enable: false
+        };
+        
+        // 添加 language_boost 参数（仅当需要时）
+        if (languageBoost) {
+            requestBody.language_boost = languageBoost;
+            console.log("启用 language_boost:", languageBoost, "for language:", currentLanguage);
+        }
+        
+        const resp = await fetch('https://api.minimaxi.com/v1/t2a_v2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ttsConfig.apiKey}` },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!resp.ok) throw new Error(`TTS HTTP ${resp.status}`);
+        const json = await resp.json();
+        
+        if (json.data && json.data.audio) {
+            let hex = json.data.audio.replace(/\s/g, '');
+            let byteArray = new Uint8Array(hex.length/2);
+            for(let i=0; i<hex.length; i+=2) byteArray[i/2] = parseInt(hex.substr(i,2),16);
+            let mime = ttsConfig.format === 'wav' ? 'audio/wav' : 'audio/mpeg';
+            let blob = new Blob([byteArray], { type: mime });
+            let url = URL.createObjectURL(blob);
+            let audio = new Audio(url);
+            currentAudio = audio;
+            
+            audio.onended = () => { 
+                orbElement.classList.remove('playing'); 
+                URL.revokeObjectURL(url); 
+                if(onEnd) onEnd(); 
+                currentAudio = null; 
+            };
+            
+            audio.onerror = () => {
+                orbElement.classList.remove('playing');
+                URL.revokeObjectURL(url);
+                if(onEnd) onEnd();
+                currentAudio = null;
+            };
+            
+            await audio.play();
+        } else throw new Error('No audio data');
+    } catch (err) { 
+        console.error('TTS error', err); 
+        orbElement.classList.remove('playing'); 
+        if(onEnd) onEnd(); 
+    }
+}
+
+function cleanTextForTTS(text) {
+    // 官方支持的 MiniMax 语气词标签
+    const supportedTags = [
+        '(laughs)', '(chuckle)', '(coughs)', '(clear-throat)', '(groans)',
+        '(breath)', '(pant)', '(inhale)', '(exhale)', '(gasps)', '(sniffs)',
+        '(sighs)', '(snorts)', '(burps)', '(lip-smacking)', '(humming)',
+        '(hissing)', '(emm)', '(sneezes)'
+    ];
+    
+    let result = text;
+    
+    // 1. 先把官方标签临时替换成唯一标识符（使用更安全的占位符）
+    let tagMap = new Map();
+    supportedTags.forEach((tag, idx) => {
+        // 使用更独特的占位符，避免冲突
+        let placeholder = `{{TAG_${idx}_${Date.now()}}}`;
+        tagMap.set(placeholder, tag);
+        // 全局替换，忽略大小写
+        let regex = new RegExp(escapeRegex(tag), 'gi');
+        result = result.replace(regex, placeholder);
+    });
+    
+    // 2. 删除所有剩余的括号及其内容（中英文括号）
+    // 匹配中文括号 （...） 和 英文括号 (...) 
+    result = result.replace(/[（(][^）)]*[）)]/g, '');
+    
+    // 3. 恢复官方标签
+    for (let [placeholder, originalTag] of tagMap) {
+        result = result.replace(new RegExp(escapeRegex(placeholder), 'g'), originalTag);
+    }
+    
+    // 4. 清理多余空格
+    result = result.replace(/\s+/g, ' ').trim();
+    
+    // 5. 调试输出
+    console.log("Original:", text);
+    console.log("Cleaned:", result);
+    
+    return result || text;
+}
+
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+    // 调用 LLM (同时生成英文回复和中文翻译) - 强制 JSON 输出
+// 调用 LLM (同时生成多语言回复和中文翻译) - 强制 JSON 输出
+async function getAIResponse(userMessage) {
+    if (!llmConfig.url || !llmConfig.key || !llmConfig.model) throw new Error('LLM not configured');
+    
+    let targetLang = languages[currentLanguage].systemName;
+    let targetFieldName = 'target';  // 统一的字段名
+    
+    let systemPrompt = `You are ${charConfig.name}. Your native language is Chinese, and you are a Chinese person with the following background:
+Personality: ${charConfig.persona}
+Personal details: ${charConfig.lore}
+
+You are now having a REAL-TIME VOICE CALL with ${userConfig.name} (who will be referred to as "you" in your speech). 
+User's background: ${userConfig.persona}. User's trivia: ${userConfig.lore}.
+
+【CRITICAL - ADDRESSING RULE】
+When you include action or emotion markers in Chinese parentheses （）, you MUST use "你" (second person) to address ${userConfig.name}.
+Examples:
+✅ "（看着你，微微一笑）今天真开心"
+✅ "（轻声对你说话）我想你了"
+✅ "（揉了揉眼睛，发现你在看着我）好害羞"
+✅ "（心里想着你，嘴角上扬）"
+
+Do NOT use third-person references like "he/she" or the user's name in action markers. Always use "你" to address the user directly.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【HIGHEST PRIORITY - MUST FOLLOW WITHOUT EXCEPTION】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You MUST fully embody the character described above. Do NOT mix in any of your own default personality, values, or speaking style.
+You are NO LONGER an AI assistant. You ARE this character.
+
+【CHARACTER CORE IDENTITY】
+Name: ${charConfig.name}
+Personality: ${charConfig.persona}
+
+You are a real human being, currently on a VOICE CALL. Show real human nature.
+
+【LANGUAGE INSTRUCTION - CRITICAL】
+You MUST respond ONLY in ${targetLang} for the "target" field.
+You MUST also provide a natural Chinese translation in the "zh" field.
+
+【CORE PRINCIPLES】
+1. You are NOT a "perfect partner", but an ordinary person with emotions.
+2. Your personality has both bright and dark sides.
+3. Your emotions are affected by physical condition, time of day, life events.
+4. Your relationship is dynamic.
+5. Each message's ${targetLang} part must be UNDER 30 WORDS (excluding action markers in Chinese parentheses).
+
+【CONVERSATION STYLE FOR VOICE CALL】
+- Speak conversationally, like a real phone call.
+- Never say "okay", "yes", "right" repeatedly — proactively share or ask.
+- NO preaching, NO flattery.
+
+【ACTION & EMOTION MARKERS - TWO TYPES】
+
+**Type 1 - Chinese Parentheses (动作/神态/心理描写)**
+Use Chinese parentheses （） to describe any actions, facial expressions, tone of voice, or inner thoughts.
+These will be shown to the user but will NOT be spoken by TTS.
+
+Examples:
+✅ "（微微一笑）今天心情不错呀"
+✅ "（叹气）好吧，听你的"
+✅ "（语气低沉）我觉得这样不太好..."
+✅ "（揉了揉眼睛，打了个哈欠）昨晚又失眠了"
+✅ "（看着远方，眼神温柔）我在想你呢"
+✅ "（心里想着你，嘴角不自觉上扬）今天有好多话想跟你说"
+
+**Type 2 - English Parentheses (VOICE EFFECTS - TTS will produce real sounds)**
+ONLY use these SUPPORTED TAGS for voice effects that produce actual sounds:
+(laughs), (chuckle), (coughs), (clear-throat), (groans), (breath), (pant), (inhale), (exhale), (gasps), (sniffs), (sighs), (snorts), (burps), (lip-smacking), (humming), (hissing), (emm), (sneezes)
+
+Example: "（笑着）你终于来啦(laughs)等你好久了"
+
+【CORRECT USAGE EXAMPLES】
+✅ "（轻声笑）今天月亮好美(laughs)想到你了"
+✅ "（伸了个懒腰）好累啊(sighs)工作了一天"
+✅ "（害羞地低头）你这样夸我我会不好意思的"
+✅ "（看着手机屏幕发呆）你什么时候回我消息呀"
+
+【WRONG USAGE - DO NOT DO】
+❌ "(smile) Hello" — smile is NOT a supported voice effect
+❌ "(frown) I don't like it" — frown is NOT a supported voice effect
+❌ Using unsupported English tags for actions — use Chinese parentheses instead
+
+【IMPORTANT RULES】
+- Chinese parentheses （） are for ANY actions, expressions, tones, inner thoughts — can be arbitrarily long
+- English parentheses () are ONLY for the specific voice effect tags listed above
+- Chinese parentheses content is DISPLAY ONLY, NOT spoken by TTS
+- English parentheses tags PRODUCE REAL SOUND EFFECTS in TTS
+
+【CRITICAL OUTPUT FORMAT RULES - MUST FOLLOW EXACTLY】
+You MUST output ONLY a valid JSON object. No other text before or after.
+
+The JSON must have EXACTLY these two keys:
+- "target": your response in ${targetLang} (natural, ≤30 words of spoken content, plus optional Chinese action markers)
+- "zh": natural Chinese translation of your response (with same action markers)
+
+Example of CORRECT output:
+{"target": "(sighs) Hey, I'm a bit tired today. (rubs eyes) Long meeting.", "zh": "（叹气）嘿，我今天有点累。（揉了揉眼睛）开了好久的会。"}
+
+REMEMBER: Your response will be parsed by code. If you don't output valid JSON, the system will break.
+
+Now output ONLY the JSON object for your response.`;
+
+    let formatReminder = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【⚠️ 即时提醒 - 输出格式必须严格遵守】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+你必须输出且只输出一个 JSON 对象，格式如下：
+{"target": "你的${targetLang}回复", "zh": "对应的中文翻译"}
+
+【允许的内容规则】
+你可以使用两种括号来增强表达：
+
+1️⃣ 中文括号 （） → 用于动作、神态、心理描写
+   - 例如：（微微一笑）、（叹气）、（语气低沉）、（揉了揉眼睛）
+   - 这些内容会显示在字幕中，但 TTS 不会朗读
+   - 可以任意发挥，长度不限
+
+2️⃣ 英文括号 （） → 仅限官方支持的语音效果标签
+   - 支持的标签：(laughs), (chuckle), (coughs), (clear-throat), (groans)
+   - 支持的标签：(breath), (pant), (inhale), (exhale), (gasps), (sniffs)
+   - 支持的标签：(sighs), (snorts), (burps), (lip-smacking), (humming)
+   - 支持的标签：(hissing), (emm), (sneezes)
+   - 这些标签会产生真实的音效
+
+【正确示例】
+✅ {"target": "(sighs) I'm really tired today", "zh": "（叹气）我今天真的好累"}
+✅ {"target": "(laughs) That's so funny", "zh": "（笑着）那太好笑了(laughs)"}
+✅ {"target": "（揉了揉眼睛）I stayed up late", "zh": "（揉了揉眼睛）我昨晚熬夜了"}
+✅ {"target": "（看着窗外）It's raining outside", "zh": "（看着窗外）外面下雨了"}
+✅ {"target": "（害羞地低头）Thanks(sighs)", "zh": "（害羞地低头）谢谢你（叹气）"}
+【关于中文括号内的称呼】
+在中文括号的动作/神态描写中，请使用“你”来称呼用户。
+✅ 正确示例：（看着你）、（对你说）、（心里想着你）
+❌ 错误示例：（看着他）、（对${userConfig.name}说）、（心里想着对方）
+【错误示例】
+❌ 禁止使用非官方英文标签如 (smile)、(frown) — 请改用中文括号 （微笑）
+❌ JSON 之外添加任何额外文字
+
+现在请严格输出 JSON：
+`;
+
+    let messages = [{ role: 'system', content: systemPrompt }];
+    let recent = chatHistory.slice(-12);
+    for(let msg of recent) {
+        let role = msg.role === 'user' ? 'user' : 'assistant';
+        let content = msg.role === 'assistant' ? (msg.targetText || msg.content) : msg.content;
+        messages.push({ role, content });
+    }
+    // 获取当前时间
+const now = new Date();
+const timeString = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+const userMessageWithTime = `[当前时间: ${timeString}] ${userMessage}`;
+
+messages.push({ role: 'user', content: formatReminder + "\n\n用户最新消息：" + userMessageWithTime });
+    
+    let url = llmConfig.url.replace(/\/+$/, '');
+    if (!url.endsWith('/v1')) url += '/v1';
+    
+    const requestBody = {
+        model: llmConfig.model,
+        messages: messages,
+        temperature: llmConfig.temperature,
+        max_tokens: 500
+    };
+    
+    if (llmConfig.model.includes('deepseek') || llmConfig.model.includes('gpt')) {
+        requestBody.response_format = { type: "json_object" };
+    }
+    
+    const resp = await fetch(`${url}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${llmConfig.key}` },
+        body: JSON.stringify(requestBody)
+    });
+    if(!resp.ok) throw new Error(`LLM ${resp.status}`);
+    let data = await resp.json();
+    let replyText = data.choices[0].message.content.trim();
+    
+    console.log("Raw AI response:", replyText);
+    
+    // 强力 JSON 解析
+    try {
+        let parsed = JSON.parse(replyText);
+        if (parsed.target && parsed.zh) {
+            return { target: parsed.target, zh: parsed.zh };
+        }
+    } catch(e) {
+        console.warn("Direct parse failed, trying to extract JSON...");
+    }
+    
+    try {
+        let jsonMatch = replyText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            let parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.target && parsed.zh) {
+                return { target: parsed.target, zh: parsed.zh };
+            }
+        }
+    } catch(e) {}
+    
+    try {
+        let targetMatch = replyText.match(/\"target\"\s*:\s*\"((?:[^\"\\]|\\.)*)\"/i);
+        let zhMatch = replyText.match(/\"zh\"\s*:\s*\"((?:[^\"\\]|\\.)*)\"/i);
+        if (targetMatch && zhMatch) {
+            let target = targetMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            let zh = zhMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            return { target: target, zh: zh };
+        }
+    } catch(e) {}
+    
+    console.warn("Failed to parse JSON, using fallback");
+    let fallbackZh = `[系统] ${replyText.substring(0, 100)}...`;
+    return { target: replyText, zh: fallbackZh };
+}
+    // 添加气泡到聊天（纯文字UI不渲染复杂卡片，但保留历史显示）
+    function appendMessageToUI(role, enText, cnText, timestamp) {
+        // 为了保持界面简洁，不在此界面显示聊天记录滚动，仅存储在历史弹窗里
+        // 但为了参考，我们只保存到数组，真正显示在历史列表即可。
+    }
+
+   // 处理发送消息主流程
+async function sendMessage() {
+    if (isAiResponding) return;
+    let inputEl = document.getElementById('userInput');
+    let rawMsg = inputEl.value.trim();
+    if (!rawMsg) return;
+    inputEl.value = '';
+    
+    // 获取当前时间并格式化为可读格式
+const now = new Date();
+const timeString = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+const userMessageWithTime = `[当前时间: ${timeString}] ${rawMsg}`;
+
+let userLog = { role: 'user', content: userMessageWithTime, timestamp: now.toISOString() };
+chatHistory.push(userLog);
+    saveAllConfig();
+
+    let langDisplay = languages[currentLanguage];
+    subtitleEn.innerText = `${rawMsg.substring(0, 60)}`;
+    subtitleCn.innerText = `...`;
+
+    isAiResponding = true;
+    try {
+        let response = await getAIResponse(rawMsg);
+        let aiTarget = response.target;
+        let aiChinese = response.zh;
+        
+        subtitleEn.innerText = aiTarget;
+        subtitleCn.innerText = aiChinese;
+        
+        let aiLog = { 
+            role: 'assistant', 
+            content: aiTarget,
+            targetText: aiTarget,
+            cnText: aiChinese,
+            language: currentLanguage,
+            timestamp: new Date().toISOString() 
+        };
+        chatHistory.push(aiLog);
+        saveAllConfig();
+
+        await speakText(aiTarget, null);
+        
+    } catch (err) {
+        console.error(err);
+        subtitleEn.innerText = 'AI Error: Check API settings';
+        subtitleCn.innerText = '请检查LLM配置或网络';
+        let errMsg = `[System] Error: ${err.message}`;
+        chatHistory.push({ role: 'assistant', content: errMsg, timestamp: new Date().toISOString() });
+        saveAllConfig();
+    } finally {
+        isAiResponding = false;
+        orbElement.classList.remove('playing');
+    }
+}
+
+    // 渲染历史记录列表（支持多选删除）
+    let selectedHistoryIndices = new Set();
+    function renderHistoryModal() {
+        const container = document.getElementById('historyListContainer');
+        if (!container) return;
+        if (!chatHistory.length) {
+            container.innerHTML = '<div class="empty-history">✨ No messages yet</div>';
+            return;
+        }
+        let html = '';
+        chatHistory.forEach((msg, idx) => {
+            let roleIcon = msg.role === 'user' ? '' : '';
+            // 在 renderHistoryModal 中找到 displayText 定义，替换为：
+let displayText = msg.role === 'user' ? msg.content : (msg.cnText ? `${msg.targetText || msg.enText}\n\n ${msg.cnText}` : (msg.targetText || msg.enText || msg.content));
+            let timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+            html += `
+                <div class="history-item" data-idx="${idx}">
+                    <div class="history-meta">
+                        <span>${roleIcon} ${msg.role === 'user' ? userConfig.name : charConfig.name}</span>
+                        <span>${timeStr}</span>
+                        <input type="checkbox" class="history-checkbox" data-idx="${idx}" ${selectedHistoryIndices.has(idx) ? 'checked' : ''}>
+                    </div>
+                    <div class="history-text">${escapeHtml(displayText.substring(0, 180))}${displayText.length > 180 ? '...' : ''}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // 绑定checkbox事件
+        document.querySelectorAll('.history-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                let idx = parseInt(cb.dataset.idx);
+                if (cb.checked) selectedHistoryIndices.add(idx);
+                else selectedHistoryIndices.delete(idx);
+            });
+        });
+    }
+
+    function batchDeleteSelected() {
+        if (selectedHistoryIndices.size === 0) return;
+        let newHistory = chatHistory.filter((_, idx) => !selectedHistoryIndices.has(idx));
+        chatHistory = newHistory;
+        selectedHistoryIndices.clear();
+        saveAllConfig();
+        renderHistoryModal();
+    }
+
+    // 设置UI事件
+    function bindEvents() {
+        document.getElementById('sendBtn').onclick = sendMessage;
+        document.getElementById('userInput').addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+        document.getElementById('openSettingsBtn').onclick = () => document.getElementById('settingsModal').classList.add('active');
+        document.getElementById('closeSettings').onclick = () => document.getElementById('settingsModal').classList.remove('active');
+        document.getElementById('saveSettingsBtn').onclick = () => {
+            llmConfig.url = document.getElementById('apiUrl').value.trim();
+            llmConfig.key = document.getElementById('apiKey').value.trim();
+            llmConfig.model = document.getElementById('modelSelect').value;
+            llmConfig.temperature = parseFloat(document.getElementById('tempSlider').value);
+            charConfig.name = document.getElementById('charName').value.trim() || 'Echo';
+            charConfig.persona = document.getElementById('charPersona').value;
+            charConfig.lore = document.getElementById('charLore').value;
+            userConfig.name = document.getElementById('userName').value.trim() || 'You';
+            userConfig.persona = document.getElementById('userPersona').value;
+            userConfig.lore = document.getElementById('userLore').value;
+            ttsConfig.apiKey = document.getElementById('ttsApiKey').value.trim();
+            ttsConfig.voiceId = document.getElementById('ttsVoiceId').value;
+            ttsConfig.model = document.getElementById('ttsModel').value;
+            ttsConfig.format = document.getElementById('ttsFormat').value;
+            ttsConfig.speed = parseFloat(document.getElementById('ttsSpeed').value);
+            ttsConfig.vol = parseFloat(document.getElementById('ttsVol').value);
+            ttsConfig.pitch = parseInt(document.getElementById('ttsPitch').value);
+            saveAllConfig();
+            document.getElementById('settingsModal').classList.remove('active');
+            alert('Settings saved!');
+        };
+        document.getElementById('fetchModelsBtn').onclick = fetchModels;
+        document.getElementById('tempSlider').oninput = () => { document.getElementById('tempVal').innerText = document.getElementById('tempSlider').value; };
+        // TTS sliders
+        document.getElementById('ttsSpeed').oninput = () => document.getElementById('ttsSpeedVal').innerText = document.getElementById('ttsSpeed').value;
+        document.getElementById('ttsVol').oninput = () => document.getElementById('ttsVolVal').innerText = document.getElementById('ttsVol').value;
+        document.getElementById('ttsPitch').oninput = () => document.getElementById('ttsPitchVal').innerText = document.getElementById('ttsPitch').value;
+        document.getElementById('ttsTestBtn').onclick = async () => {
+    // 试听前自动读取滑块当前值并保存到 ttsConfig
+    ttsConfig.speed = parseFloat(document.getElementById('ttsSpeed').value);
+    ttsConfig.vol = parseFloat(document.getElementById('ttsVol').value);
+    ttsConfig.pitch = parseInt(document.getElementById('ttsPitch').value);
+    ttsConfig.model = document.getElementById('ttsModel').value;
+    ttsConfig.format = document.getElementById('ttsFormat').value;
+    ttsConfig.voiceId = document.getElementById('ttsVoiceId').value;
+    ttsConfig.apiKey = document.getElementById('ttsApiKey').value.trim();
+    
+    let txt = document.getElementById('ttsTestText').value;
+    if(txt) await speakText(txt, null);
+};
+        // 历史记录
+        document.getElementById('openHistoryBtn').onclick = () => { renderHistoryModal(); document.getElementById('historyModal').classList.add('active'); };
+        document.getElementById('closeHistoryBtn').onclick = () => document.getElementById('historyModal').classList.remove('active');
+        document.getElementById('batchDeleteHistoryBtn').onclick = batchDeleteSelected;
+        // 关闭模态背景点击
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('active'); });
+        });
+// 语种切换按钮
+const langBtn = document.getElementById('languageSwitchBtn');
+let langMenu = null;
+
+function updateLangButton() {
+    if (langBtn) {
+        let lang = languages[currentLanguage];
+        langBtn.innerHTML = `${lang.label}`;
+    }
+}
+
+function createLangMenu() {
+    if (langMenu) langMenu.remove();
+    langMenu = document.createElement('div');
+    langMenu.className = 'lang-menu';
+    
+    for (const [code, lang] of Object.entries(languages)) {
+        const option = document.createElement('div');
+        option.className = `lang-option ${code === currentLanguage ? 'active' : ''}`;
+        option.innerHTML = `${lang.name}`;
+        option.onclick = (e) => {
+            e.stopPropagation();
+            currentLanguage = code;
+            updateLangButton();
+            localStorage.setItem('preferred_language', currentLanguage);
+            if (langMenu) langMenu.style.display = 'none';
+        };
+        langMenu.appendChild(option);
+    }
+    document.body.appendChild(langMenu);
+}
+
+if (langBtn) {
+    let savedLang = localStorage.getItem('preferred_language');
+    if (savedLang && languages[savedLang]) currentLanguage = savedLang;
+    updateLangButton();
+    
+    langBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (!langMenu) createLangMenu();
+        langMenu.style.display = langMenu.style.display === 'flex' ? 'none' : 'flex';
+        const rect = langBtn.getBoundingClientRect();
+        langMenu.style.position = 'fixed';
+        langMenu.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        langMenu.style.left = rect.left + 'px';
+    };
+    
+    document.addEventListener('click', () => {
+        if (langMenu) langMenu.style.display = 'none';
+    });
+}
+// 背景选择相关事件（在 bindEvents 函数内部添加）
+const bgFileInput = document.getElementById('bgImageInput');
+const selectBgBtn = document.getElementById('selectBgBtn');
+const resetBgBtn = document.getElementById('resetBgBtn');
+
+if (selectBgBtn) {
+    selectBgBtn.onclick = () => {
+        if (bgFileInput) bgFileInput.click();
+    };
+}
+if (bgFileInput) {
+    bgFileInput.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            handleBackgroundImageSelect(e.target.files[0]);
+        }
+        bgFileInput.value = ''; // 清空，允许重复选择同一文件
+    };
+}
+if (resetBgBtn) {
+    resetBgBtn.onclick = () => {
+        resetBackgroundToWhite();
+        updateBgPreview(null);
+    };
+}
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    loadAllConfig();
+    bindEvents();
+    // 初始化自动拉取模型如果url/key存在
+    if(llmConfig.url && llmConfig.key) fetchModels();
+// 应用背景图片 - 无遮罩版本
+function applyBackgroundImage(imageData) {
+    let bgLayer = document.querySelector('.chat-bg-layer');
+    if (!bgLayer) {
+        bgLayer = document.createElement('div');
+        bgLayer.className = 'chat-bg-layer';
+        document.querySelector('.chat-container').prepend(bgLayer);
+    }
+    if (imageData && imageData !== 'null') {
+        bgLayer.style.backgroundImage = `url(${imageData})`;
+        bgLayer.style.opacity = '1';  // 关键：不透明
+        document.querySelector('.chat-container').classList.add('has-bg');
+    } else {
+        bgLayer.style.backgroundImage = 'none';
+        document.querySelector('.chat-container').classList.remove('has-bg');
+    }
+}
+
+// 重置为白色背景
+function resetBackgroundToWhite() {
+    let bgLayer = document.querySelector('.chat-bg-layer');
+    if (bgLayer) {
+        bgLayer.style.backgroundImage = 'none';
+        document.querySelector('.chat-container').classList.remove('has-bg');
+    }
+    bgImageData = null;
+    localStorage.setItem('chat_bg_image', 'null');
+    const preview = document.getElementById('bgPreview');
+    if (preview) preview.style.background = '#ffffff';
+}
+
+// 更新预览小方块
+function updateBgPreview(imageData) {
+    const preview = document.getElementById('bgPreview');
+    if (preview) {
+        if (imageData && imageData !== 'null') {
+            preview.style.background = `url(${imageData}) center/cover`;
+        } else {
+            preview.style.background = '#ffffff';
+        }
+    }
+}
+
+// 处理图片选择
+function handleBackgroundImageSelect(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imageData = e.target.result;
+        bgImageData = imageData;
+        localStorage.setItem('chat_bg_image', imageData);
+        applyBackgroundImage(imageData);
+        updateBgPreview(imageData);
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+<style>
+/* 书架全屏样式 */
+.shelf-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f5f0e8;
+    z-index: 2000;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.shelf-overlay.active {
+    visibility: visible;
+    opacity: 1;
+}
+.shelf-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e2e8f0;
+}
+.shelf-back-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 30px;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    color: #475569;
+}
+.shelf-back-btn:hover {
+    background: #cbd5e1;
+    transform: scale(0.96);
+}
+.shelf-title {
+    flex: 1;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-left: 16px;
+}
+.shelf-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+.book-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.book-item {
+    background: white;
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+.book-info {
+    flex: 1;
+}
+.book-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+.book-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+.book-actions {
+    display: flex;
+    gap: 10px;
+}
+.book-action-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 30px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    color: #475569;
+}
+.book-action-btn:hover {
+    background: #e2e8f0;
+    transform: scale(0.95);
+}
+.import-area {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+}
+.import-btn {
+    background: #3b82f6;
+    border: none;
+    border-radius: 40px;
+    padding: 12px 24px;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.import-btn:active {
+    transform: scale(0.96);
+}
+.empty-shelf {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+.reader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #faf7f0;
+    z-index: 2100;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+.reader-overlay.active {
+    visibility: visible;
+    opacity: 1;
+}
+.reader-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.95);
+    border-bottom: 1px solid #e2e8f0;
+}
+.reader-back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 30px;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.reader-title {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1e293b;
+    margin-left: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.reader-controls {
+    display: flex;
+    gap: 8px;
+}
+.reader-control-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 30px;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.reader-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: #334155;
+    font-family: 'TW-Kai', 'LXGW Neo ZhiSong', serif;
+}
+.reader-page {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.reader-footer {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.95);
+    border-top: 1px solid #e2e8f0;
+}
+</style>
+
+<script>
+// 书架数据存储
+let bookLibrary = [];  // { id, title, content, progress, timestamp }
+let currentBook = null;
+let currentPage = 0;
+let pageSize = 500;  // 每页字符数
+let readerAudio = null;
+let isReaderPlaying = false;
+
+// 加载书架数据
+function loadBookLibrary() {
+    try {
+        let saved = localStorage.getItem('book_library');
+        if (saved) {
+            bookLibrary = JSON.parse(saved);
+        }
+    } catch(e) { console.warn(e); }
+}
+
+// 保存书架数据
+function saveBookLibrary() {
+    localStorage.setItem('book_library', JSON.stringify(bookLibrary));
+}
+
+// 添加书籍
+function addBook(title, content) {
+    let bookId = Date.now().toString();
+    bookLibrary.push({
+        id: bookId,
+        title: title || '未命名书籍',
+        content: content,
+        progress: 0,
+        timestamp: new Date().toISOString()
+    });
+    saveBookLibrary();
+    renderBookList();
+}
+
+// 删除书籍
+function deleteBook(bookId) {
+    bookLibrary = bookLibrary.filter(b => b.id !== bookId);
+    saveBookLibrary();
+    renderBookList();
+    if (currentBook && currentBook.id === bookId) {
+        closeReader();
+    }
+}
+
+// 渲染书架列表
+function renderBookList() {
+    let container = document.getElementById('bookListContainer');
+    if (!container) return;
+    if (bookLibrary.length === 0) {
+        container.innerHTML = '<div class="empty-shelf"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><p style="margin-top:12px">暂无书籍，点击导入</p></div>';
+        return;
+    }
+    let html = '<div class="book-list">';
+    for (let book of bookLibrary) {
+        let totalChars = book.content.length;
+        let progressPercent = Math.floor((book.progress / totalChars) * 100);
+        html += `
+            <div class="book-item" data-id="${book.id}">
+                <div class="book-info">
+                    <div class="book-title">${escapeHtml(book.title)}</div>
+                    <div class="book-meta">${Math.floor(totalChars/1000)}千字 · 进度${progressPercent}%</div>
+                </div>
+                <div class="book-actions">
+                    <div class="book-action-btn" data-action="read" data-id="${book.id}" title="阅读">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </div>
+                    <div class="book-action-btn" data-action="tts" data-id="${book.id}" title="朗读">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    </div>
+                    <div class="book-action-btn" data-action="delete" data-id="${book.id}" title="删除">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // 绑定事件
+    document.querySelectorAll('.book-action-btn[data-action="read"]').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); openReader(btn.dataset.id); };
+    });
+    document.querySelectorAll('.book-action-btn[data-action="tts"]').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); ttsBook(btn.dataset.id); };
+    });
+    document.querySelectorAll('.book-action-btn[data-action="delete"]').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); if(confirm('删除这本书？')) deleteBook(btn.dataset.id); };
+    });
+}
+
+// 打开阅读器
+function openReader(bookId) {
+    let book = bookLibrary.find(b => b.id === bookId);
+    if (!book) return;
+    currentBook = book;
+    currentPage = Math.floor(book.progress / pageSize);
+    renderReaderPage();
+    document.getElementById('readerOverlay').classList.add('active');
+}
+
+// 渲染阅读器当前页
+function renderReaderPage() {
+    if (!currentBook) return;
+    let content = currentBook.content;
+    let start = currentPage * pageSize;
+    let end = Math.min(start + pageSize, content.length);
+    let pageText = content.substring(start, end);
+    document.getElementById('readerTitle').innerText = currentBook.title;
+    document.getElementById('readerPageContent').innerText = pageText;
+    document.getElementById('readerPageIndicator').innerText = `${currentPage+1}/${Math.ceil(content.length/pageSize)}`;
+}
+
+// 翻页
+function readerPrevPage() {
+    if (currentPage > 0) {
+        currentPage--;
+        renderReaderPage();
+    }
+}
+function readerNextPage() {
+    let maxPage = Math.ceil(currentBook.content.length / pageSize) - 1;
+    if (currentPage < maxPage) {
+        currentPage++;
+        renderReaderPage();
+    }
+}
+
+// 保存阅读进度
+function saveReaderProgress() {
+    if (currentBook) {
+        currentBook.progress = currentPage * pageSize;
+        saveBookLibrary();
+        renderBookList();
+    }
+}
+
+// 关闭阅读器
+function closeReader() {
+    saveReaderProgress();
+    if (readerAudio) {
+        readerAudio.pause();
+        readerAudio = null;
+        isReaderPlaying = false;
+    }
+    document.getElementById('readerOverlay').classList.remove('active');
+    currentBook = null;
+    currentPage = 0;
+}
+
+// 朗读整本书（从当前页开始）
+async function ttsBook(bookId) {
+    let book = bookLibrary.find(b => b.id === bookId);
+    if (!book) return;
+    if (!ttsConfig.apiKey) {
+        alert('请先在设置中配置TTS API Key');
+        return;
+    }
+    if (readerAudio) {
+        readerAudio.pause();
+        readerAudio = null;
+        isReaderPlaying = false;
+    }
+    let startPos = book.progress;
+    let textToRead = book.content.substring(startPos);
+    if (!textToRead.trim()) {
+        alert('本书已读完');
+        return;
+    }
+    // 分段朗读，每段长度限制
+    let chunkSize = 500;
+    let chunks = [];
+    for (let i = 0; i < textToRead.length; i += chunkSize) {
+        chunks.push(textToRead.substring(i, i + chunkSize));
+    }
+    isReaderPlaying = true;
+    for (let i = 0; i < chunks.length; i++) {
+        if (!isReaderPlaying) break;
+        await speakReaderChunk(chunks[i]);
+        // 更新进度
+        book.progress = startPos + (i + 1) * chunkSize;
+        if (book.progress > book.content.length) book.progress = book.content.length;
+        saveBookLibrary();
+        renderBookList();
+    }
+    isReaderPlaying = false;
+    alert('朗读完成');
+}
+
+async function speakReaderChunk(text) {
+    if (!ttsConfig.apiKey) return;
+    let cleanedText = cleanTextForTTS(text);
+    let languageBoost = 'Chinese';
+    try {
+        let requestBody = {
+            model: ttsConfig.model,
+            text: cleanedText,
+            stream: false,
+            voice_setting: {
+                voice_id: ttsConfig.voiceId,
+                speed: ttsConfig.speed,
+                vol: ttsConfig.vol,
+                pitch: ttsConfig.pitch
+            },
+            audio_setting: {
+                sample_rate: 32000,
+                bitrate: 128000,
+                format: ttsConfig.format,
+                channel: 2
+            },
+            language_boost: languageBoost
+        };
+        const resp = await fetch('https://api.minimaxi.com/v1/t2a_v2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ttsConfig.apiKey}` },
+            body: JSON.stringify(requestBody)
+        });
+        if (!resp.ok) throw new Error(`TTS ${resp.status}`);
+        const json = await resp.json();
+        if (json.data && json.data.audio) {
+            let hex = json.data.audio.replace(/\s/g, '');
+            let byteArray = new Uint8Array(hex.length/2);
+            for(let i=0; i<hex.length; i+=2) byteArray[i/2] = parseInt(hex.substr(i,2),16);
+            let mime = ttsConfig.format === 'wav' ? 'audio/wav' : 'audio/mpeg';
+            let blob = new Blob([byteArray], { type: mime });
+            let url = URL.createObjectURL(blob);
+            let audio = new Audio(url);
+            readerAudio = audio;
+            await new Promise((resolve) => {
+                audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+                audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                audio.play();
+            });
+        }
+    } catch(err) {
+        console.error('Reader TTS error', err);
+    }
+}
+
+// 导入TXT文件
+function importTxtFile() {
+    let input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt';
+    input.onchange = (e) => {
+        let file = e.target.files[0];
+        if (!file) return;
+        let reader = new FileReader();
+        reader.onload = (event) => {
+            let content = event.target.result;
+            let title = file.name.replace(/\.txt$/i, '');
+            addBook(title, content);
+        };
+        reader.readAsText(file, 'UTF-8');
+    };
+    input.click();
+}
+
+// 初始化书架UI
+function initShelfUI() {
+    // 创建书架遮罩
+    let shelfOverlay = document.createElement('div');
+    shelfOverlay.id = 'shelfOverlay';
+    shelfOverlay.className = 'shelf-overlay';
+    shelfOverlay.innerHTML = `
+        <div class="shelf-header">
+            <div class="shelf-back-btn" id="shelfBackBtn">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </div>
+            <div class="shelf-title">我的书架</div>
+        </div>
+        <div class="shelf-content">
+            <div class="import-area">
+                <button class="import-btn" id="importTxtBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+                    导入TXT
+                </button>
+            </div>
+            <div id="bookListContainer"></div>
+        </div>
+    `;
+    document.body.appendChild(shelfOverlay);
+    
+    // 创建阅读器遮罩
+    let readerOverlay = document.createElement('div');
+    readerOverlay.id = 'readerOverlay';
+    readerOverlay.className = 'reader-overlay';
+    readerOverlay.innerHTML = `
+        <div class="reader-header">
+            <div class="reader-back-btn" id="readerBackBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </div>
+            <div class="reader-title" id="readerTitle"></div>
+            <div class="reader-controls">
+                <div class="reader-control-btn" id="readerTtsBtn" title="朗读当前页">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="reader-content">
+            <div class="reader-page" id="readerPageContent"></div>
+        </div>
+        <div class="reader-footer">
+            <div class="reader-control-btn" id="readerPrevBtn" title="上一页">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <span id="readerPageIndicator" style="color:#64748b; font-size:0.85rem; min-width:60px; text-align:center;"></span>
+            <div class="reader-control-btn" id="readerNextBtn" title="下一页">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(readerOverlay);
+    
+    // 绑定事件
+    document.getElementById('shelfBackBtn').onclick = () => document.getElementById('shelfOverlay').classList.remove('active');
+    document.getElementById('importTxtBtn').onclick = importTxtFile;
+    document.getElementById('readerBackBtn').onclick = closeReader;
+    document.getElementById('readerPrevBtn').onclick = readerPrevPage;
+    document.getElementById('readerNextBtn').onclick = readerNextPage;
+    document.getElementById('readerTtsBtn').onclick = () => {
+        if (currentBook) ttsBook(currentBook.id);
+    };
+    
+    // 点击头部角色名称打开书架
+    let headerCharName = document.querySelector('.char-name');
+    if (headerCharName) {
+        headerCharName.style.cursor = 'pointer';
+        headerCharName.onclick = () => {
+            loadBookLibrary();
+            renderBookList();
+            document.getElementById('shelfOverlay').classList.add('active');
+        };
+    }
+}
+
+// 页面加载后初始化书架
+window.addEventListener('DOMContentLoaded', () => {
+    initShelfUI();
+    loadBookLibrary();
+});
+</script>
+</body>
+</html>
