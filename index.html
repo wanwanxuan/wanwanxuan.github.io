@@ -16394,8 +16394,8 @@ const isInvitationCard = msg.isInvitationCard === true;  // 新增
 if (isXhsCard) {
     messageDiv.className = 'xhs-message-wrapper';
     messageDiv.innerHTML = msg.text;
-} else if (isWebEmbed) {
-    // 网页嵌入卡片：不包裹气泡，直接作为独立卡片
+} else if (isWebEmbed || isInvitationCard) {  // 添加 isInvitationCard
+    // 网页嵌入卡片 / 邀请卡片：不包裹气泡，直接作为独立卡片
     messageDiv.className = 'web-embed-message-wrapper';
     messageDiv.innerHTML = msg.text;
 } else if (isImageOnly) {
