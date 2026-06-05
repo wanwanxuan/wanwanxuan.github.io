@@ -36468,14 +36468,18 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
                 
                 order.partnerReviewTimerId = timerId;
                 saveDeliveryData();
-            } else if (delay <= 0 && delay > -60000) {
-                const reviewText = getRandomReplyText(2, 3);
-                order.partnerReview = reviewText;
-                saveDeliveryData();
-                
-                const partnerName = getPartnerName();
-                addSystemMessage(`${partnerName}对「${order.product.name}」评价道：${reviewText}`);
-            }
+                    } else {
+            // ★ 修复：无论过了多久，只要评价时间已到就立即生成
+            const reviewText = getRandomReplyText(2, 3);
+            order.partnerReview = reviewText;
+            order.partnerReviewTimerId = null;
+            saveDeliveryData();
+            
+            const partnerName = getPartnerName();
+            addSystemMessage(`${partnerName}对「${order.product.name}」评价道：${reviewText}`);
+            
+            if (currentView === 'partner') renderPartnerOrdersView();
+        }
         }
     }
     
@@ -36660,8 +36664,12 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         });
     }
     
-    function renderPartnerOrdersView() {
+       function renderPartnerOrdersView() {
         loadDeliveryData();
+        
+        // ★ 每次查看 TA 的订单时，自动补上遗漏的评价
+        retroactivelyFixMissingPartnerReviews();
+        loadDeliveryData(); // 重新加载以获取最新数据
         
         const container = document.getElementById('delivery-content');
         const partnerName = getPartnerName();
@@ -36786,6 +36794,27 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         }
     }
     
+        function retroactivelyFixMissingPartnerReviews() {
+        loadDeliveryData();
+        let fixedCount = 0;
+        
+        deliveryData.partnerOrders.forEach(order => {
+            if (order.status === 'delivered' && !order.partnerReview) {
+                const reviewText = getRandomReplyText(2, 3);
+                order.partnerReview = reviewText;
+                if (!order.partnerReviewTime) {
+                    order.partnerReviewTime = Date.now();
+                }
+                fixedCount++;
+            }
+        });
+        
+        if (fixedCount > 0) {
+            saveDeliveryData();
+            console.log(`[Delivery] 已为 ${fixedCount} 个遗漏订单补上评价`);
+        }
+    }
+    
     function restorePendingOrders() {
         loadDeliveryData();
         
@@ -36842,7 +36871,10 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         });
         
         saveDeliveryData();
-        
+                // ★ 页面加载时补上所有遗漏的评价
+        setTimeout(() => {
+            retroactivelyFixMissingPartnerReviews();
+        }, 1000);
         deliveryData.orders.forEach(order => {
             if (order.status === 'delivering' && order.estimatedArrival) {
                 scheduleOrderDelivery(order.id, 'me', order.estimatedArrival, order.product.name, order.orderer === getPartnerName());
