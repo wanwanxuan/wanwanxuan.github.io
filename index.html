@@ -27561,13 +27561,33 @@ window._sendPartnerNotification = function(title, body) {
         if (localStorage.getItem('notifEnabled') !== '1') return;
         if (!('Notification' in window)) return;
         if (Notification.permission !== 'granted') return;
-        //if (!document.hidden) return;
-        new Notification(title || '传讯', {
+        // 只在完全隐藏时才弹（推荐保留后台限制）
+if (document.visibilityState === 'visible') return;
+        
+        var notif = new Notification(title || '传讯', {
             body: body || '对方发来了消息',
             icon: (document.querySelector('#partner-avatar img') || {}).src,
             tag: 'partner-msg',
             renotify: true
         });
+
+        // ★ 点击通知时跳转回网页 ★
+        notif.onclick = function(event) {
+            event.preventDefault(); // 阻止浏览器的默认行为（某些浏览器会自动聚焦）
+
+            // 方法1：直接聚焦当前窗口（适用于标签页还在的情况）
+            window.focus();
+
+            // 方法2：如果窗口是隐藏的，尝试把页面拉到前台
+            if (document.hidden) {
+                // 部分浏览器需要一个小技巧：先 blur 再 focus
+                window.blur();
+                window.focus();
+            }
+
+            // 关闭通知
+            notif.close();
+        };
     } catch(e) {}
 };
 
