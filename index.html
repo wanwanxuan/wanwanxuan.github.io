@@ -34422,7 +34422,7 @@ async function loadModels() {
         }
         
         // 添加手动输入选项
-        optionsHtml += '<option value="__manual__">✏️ 手动输入模型名称</option>';
+        optionsHtml += '<option value="__manual__">手动输入模型名称</option>';
         modelSelect.innerHTML = optionsHtml;
         
         // 设置之前保存的模型
@@ -34452,7 +34452,7 @@ async function loadModels() {
             for (const m of defaultModels) {
                 optionsHtml += `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id)}</option>`;
             }
-            optionsHtml += '<option value="__manual__">✏️ 手动输入模型名称</option>';
+            optionsHtml += '<option value="__manual__">手动输入模型名称</option>';
             modelSelect.innerHTML = optionsHtml;
             
             // 添加手动输入处理
@@ -34658,7 +34658,7 @@ function addManualModelInput(selectElement) {
         
         // 构建系统提示词
         const presets = getPresetsContent();
-        const systemPrompt = `你是一位温柔细腻的创作者，擅长书写温暖的恋爱日常。请根据以下设定，创作一篇 500-800 字的短篇故事。
+        const systemPrompt = `你是一位温柔细腻的创作者，擅长书写温暖的恋爱日常。请根据以下设定，创作一篇故事。
 
 ## 角色设定
 ### ${charName}（梦角）：
@@ -34680,7 +34680,7 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
 - 今日${userName}和 ${charName} 做了：${events || '无特别事件'}
 - 今日${userName}对 ${charName} 说的话：${words || '无特别话语'}
 
-请务必在故事中自然地融入上述“今日必须包含的内容”。故事字数控制在 500-800 字。`;
+请务必在故事中自然地融入上述“今日必须包含的内容”。`;
         
         const userPrompt = `请为我创作一篇今天${userName}和${charName}在一起的温馨短篇。今天两人一起做了：${events || '一些事'}。${userName}对${charName}说：${words || '一些话'}。`;
         
@@ -34703,7 +34703,7 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
                         { role: 'user', content: userPrompt }
                     ],
                     temperature: togetherData.aiSettings.temperature || 0.7,
-                    max_tokens: 84000
+                    max_tokens: 184000
                 })
             });
             
