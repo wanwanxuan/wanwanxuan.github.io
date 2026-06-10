@@ -9694,25 +9694,35 @@
             align-items: flex-end !important;
             padding: 0 !important;
         }
-
+/* 修复：底部安全区域保障 */
+#data-modal .modal-buttons {
+    flex-shrink: 0;
+    padding: 12px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    margin-top: 0;
+}
         #data-modal .modal-content {
             padding: 0 !important;
-            overflow: hidden !important;
-            display: flex !important;
-            flex-direction: column !important;
-            height: 93dvh !important;
-            max-height: 93dvh !important;
-            min-height: 200px !important;
-            border-radius: 28px 28px 0 0 !important;
-            width: 100% !important;
-            max-width: 520px !important;
-            margin: 0 auto !important;
-            box-shadow: 0 -8px 40px rgba(0,0,0,0.18) !important;
-            background: var(--primary-bg) !important;
-            will-change: transform, opacity;
-            animation: dmSheetIn 0.38s cubic-bezier(0.32,0.72,0,1) both !important;
-            transform: translateY(0) !important;
-            opacity: 1 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /* 关键修复：从 93dvh 改为 88dvh，为底部安全区域留出空间；
+       同时设置 max-height 为 calc 值，防止在小屏设备上超出 */
+    height: 88dvh !important;
+    max-height: calc(100dvh - 40px) !important;
+    min-height: 320px !important;
+    border-radius: 28px 28px 0 0 !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    margin: 0 auto !important;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.18) !important;
+    background: var(--primary-bg) !important;
+    will-change: transform, opacity;
+    animation: dmSheetIn 0.38s cubic-bezier(0.32,0.72,0,1) both !important;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
         }
 
         @keyframes dmSheetIn {
@@ -9769,25 +9779,30 @@
 
         .dm-body {
             flex: 1 1 0 !important;
-            min-height: 0 !important;
-            overflow-y: auto !important;
-            overflow-x: hidden;
-            overscroll-behavior: contain;
-            padding: 12px 14px max(32px, calc(env(safe-area-inset-bottom, 0px) + 20px));
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            -webkit-overflow-scrolling: touch;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    /* 关键修复：减少底部 padding，并把底部安全区域留给 footer 层级处理 */
+    padding: 12px 14px 4px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
         }
         .dm-body::-webkit-scrollbar { width: 0; }
 
         .dm-storage-card {
-            background: var(--secondary-bg);
+             background: var(--secondary-bg);
             border-radius: 18px;
             border: 1px solid var(--border-color);
             padding: 14px 16px;
             position: relative;
             overflow: hidden;
+            overflow: visible !important;
+    /* 保证卡片内部内容不会因为高度塌陷而隐藏 */
+    min-height: fit-content;
+    margin-bottom: 10px; /* 与下一模块拉开距离，避免重叠 */
         }
         .dm-storage-card::before {
             content: '';
@@ -9949,9 +9964,9 @@
 
         .dm-row-card {
             background: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    overflow: visible !important; /* 防止内容溢出被裁剪 */
         }
         .dm-row-item {
             display: flex;
