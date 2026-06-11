@@ -38226,6 +38226,9 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         
         container.innerHTML = html;
         container.scrollTop = 0;
+        // 控制右下角手动发帖按钮的显隐（只在梦角tab显示）
+        const fab = document.getElementById('partner-post-fab');
+        if (fab) fab.style.display = (tab === 'partner') ? 'flex' : 'none';
     }
     
     // 更换封面
@@ -38459,7 +38462,7 @@ ${postText ? '朋友圈文字内容：' + postText : ''}
 ${postImagesDesc ? '朋友圈图片描述：' + postImagesDesc : ''}
 ${userCommentText ? mn + '在评论中说：' + userCommentText : ''}
 
-你给这条朋友圈写了评论。你的评论必须严格包含的内容：「${comment.text}」
+你给这条朋友圈写了评论。你的评论必须包含的词句：「${comment.text}」
 请以${pn}的身份，用自然通顺的方式在包含「${comment.text}」的内容基础上发表评论。
 要求：语气自然，符合你的人设，150字以内。
 
@@ -38507,11 +38510,11 @@ const systemPrompt = `你是${pn}，在朋友圈评论中，${mn}回复了你。
 ${mn}的回复内容：「${userReplyText}」
 你的原评论内容：「${parentCommentText}」
 
-现在你需要回复${mn}，你的回复必须包含的内容：「${reply.text}」
-请以${pn}的身份进行回复。必须严格包含「${reply.text}」的核心内容并适当润色。150字以内。
+现在你需要回复${mn}，你的回复必须围绕以下词句展开：「${reply.text}」
+请以${pn}的身份进行回复。必须在词句「${reply.text}」的核心内容基础上进行适当润色与延伸。150字以内。
 【重要】
 - 你的回复严禁使用任何括号 () 或 描述动作。`;
-        const userPrompt = `请进行回复，回复内容必须包含：「${reply.text}」`;
+        const userPrompt = `请进行回复，回复内容必须围绕：「${reply.text}」`;
         
         showNotification('正在展开详情...', 'info', 2000);
         const aiResult = await callAI(systemPrompt, userPrompt);
@@ -38544,8 +38547,8 @@ ${mn}的回复内容：「${userReplyText}」
         }
         
         const systemPrompt = `你是${pn}，人设：${charPersona}
-你发了一条朋友圈。${post.text ? '你发布的朋友圈文字需要包含的内容：「' + post.text + '」' : ''}${imageDescStr ? '。图片内容描述：' + imageDescStr : ''}
-请以${pn}的视角发布这条朋友圈。要求：你发的朋友圈必须严格围绕朋友圈的文字内容和图片描述中的关键信息。语气自然，符合人设，200字以内。
+你发了一条朋友圈。${post.text ? '你发布的朋友圈文字需要包含的词句：「' + post.text + '」' : ''}${imageDescStr ? '。图片内容描述：' + imageDescStr : ''}
+请以${pn}的视角发布这条朋友圈。要求：你发的朋友圈必须围绕提供的词句和图片描述中的关键信息。语气自然日常，温柔且以你的方式表达爱意，必须符合人设，200字以内。
 【重要】
 - 你的朋友圈内容严禁使用任何括号 () 或 描述动作。`;
         const userPrompt = `请以${pn}的视角发布这条朋友圈`;
@@ -39056,6 +39059,56 @@ window.commentOnMoment = function(postId) {
         // 初始化调度
         schedulePartnerMoments();
         restoreSchedule();
+        // 【新增】手动触发梦角发朋友圈浮动按钮
+(function() {
+    const fab = document.createElement('button');
+    fab.id = 'partner-post-fab';
+    fab.title = '让梦角在10分钟内发布一条朋友圈';
+    fab.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    // 按钮样式：圆形，绝对定位在 moments-modal 右下角
+    fab.style.cssText = `
+        position: absolute;
+        bottom: 24px;
+        right: 24px;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--accent-color);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        cursor: pointer;
+        display: none; /* 默认隐藏，只在梦角tab显示 */
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        z-index: 20;
+        transition: transform 0.2s, opacity 0.2s;
+        backdrop-filter: blur(6px);
+    `;
+    // 点击行为
+    fab.addEventListener('click', function() {
+        const delay = Math.random() * 10 * 60 * 1000; // 0~10分钟随机
+        const pn = getPartnerName();
+        showNotification(`${pn} 将在 ${Math.round(delay/60000)} 分钟后发布朋友圈 ✦`, 'info', 3000);
+        
+        // 禁用按钮防止连点
+        fab.disabled = true;
+        fab.style.opacity = '0.5';
+        fab.style.transform = 'scale(0.95)';
+        
+        setTimeout(() => {
+            publishPartnerMoment();          // 发布（不涉及每日调度计数）
+            showNotification(`${pn} 刚刚发布了一条朋友圈！`, 'success', 3000);
+            fab.disabled = false;
+            fab.style.opacity = '1';
+            fab.style.transform = 'scale(1)';
+        }, delay);
+    });
+    
+    const modal = document.getElementById('moments-modal');
+    if (modal) modal.appendChild(fab);
+})();
     }
     
     // 导出全局函数
