@@ -38452,25 +38452,41 @@ if (userComment) {
     userCommentText = userComment.text;
 }
 
+// ★ 修复：把朋友圈作者、正文、图片、用户评论一起传给 AI
+const postAuthor = post.author === 'me' ? mn : pn;
+const postText = post.text || '';
+let postImagesDesc = '';
+if (post.images && post.images.length > 0) {
+    postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
+}
+
+// 用户在这条朋友圈下的评论（如果有）
+let userCommentsInPost = '';
+const userComments = post.comments.filter(c => c.author === 'me');
+if (userComments.length > 0) {
+    userCommentsInPost = '\n' + mn + '在这条朋友圈下的评论：';
+    userComments.forEach(c => {
+        userCommentsInPost += '\n' + mn + '评论：' + c.text;
+    });
+}
+
 const systemPrompt = `你是${pn}，以下是你的设定：
 人设：${charPersona}
 关于你的事：${charMemories}
 关于${mn}的事：${userPersona} | ${userMemories}
 
-你在朋友圈看到${mn}发了一条朋友圈。
-${postText ? '朋友圈文字内容：' + postText : ''}
-${postImagesDesc ? '朋友圈图片描述：' + postImagesDesc : ''}
-${userCommentText ? mn + '在评论中说：' + userCommentText : ''}
+你在朋友圈看到${postAuthor}发了一条朋友圈。
+${postText ? '这条朋友圈的文字内容：' + postText : ''}
+${postImagesDesc}
 
-你给这条朋友圈写了评论。你的评论必须包含的词句：「${comment.text}」
-请以${pn}的身份，用自然通顺的方式在包含「${comment.text}」的内容基础上发表评论。
-要求：语气自然，符合你的人设，150字以内。
+你在这条朋友圈下写了一条评论。你的评论必须包含的核心词句：「${comment.text}」
+请以${pn}的身份，用自然通顺的方式，理清「${comment.text}」这些词句内在的联系，并将这些词句串联成逻辑通顺的话语发表完整的评论。
+要求：语气自然，符合你的人设，150 字以内，且严禁使用任何括号 () 或描述动作的旁白。
+${userCommentsInPost}
 
-近期朋友圈互动记录：${recentCtx}
-【重要】
-- 你的评论严禁使用任何括号 () 或 描述动作。`;
+近期朋友圈互动记录：${recentCtx}`;
         
-        const userPrompt = `请以${pn}的身份发表你对这条朋友圈的评论，你的评论必须包含的内容：「${comment.text}」`;
+        const userPrompt = `请以${pn}的身份发表你对这条朋友圈的评论，你的评论必须包含的词句：「${comment.text}」`;
         
         showNotification('正在展开评论详情...', 'info', 2000);
         const aiResult = await callAI(systemPrompt, userPrompt);
@@ -38506,14 +38522,38 @@ const parentCommentText = comment.text;  // 梦角回复的那条评论的内容
 // 找到用户刚刚发的回复（触发这次展开的那条回复）
 const userReplyText = reply.author === 'me' ? reply.text : ''; // 一般情况下这里是用户发的
 
-const systemPrompt = `你是${pn}，在朋友圈评论中，${mn}回复了你。
-${mn}的回复内容：「${userReplyText}」
-你的原评论内容：「${parentCommentText}」
+// ★ 修复：将朋友圈作者、正文、之前的对话链条传给 AI
+const postAuthor = post.author === 'me' ? mn : pn;
+const postText = post.text || '';
+let postImagesDesc = '';
+if (post.images && post.images.length > 0) {
+    postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
+}
 
-现在你需要回复${mn}，你的回复必须围绕以下词句展开：「${reply.text}」
-请以${pn}的身份进行回复。必须在词句「${reply.text}」的核心内容基础上进行适当润色与延伸。150字以内。
+// 构建完整的对话上下文
+let conversationChain = '';
+// 梦角的第一条评论（即当前 comment 的父亲）
+conversationChain += `\n${pn}（你）的初始评论：${comment.text}`;
+// 用户对这条评论的回复（触发回复的那条）
+conversationChain += `\n${mn} 回复：${reply.text}`;
+
+const systemPrompt = `你是${pn}，以下是你的设定：
+人设：${charPersona}
+关于你的事：${charMemories}
+关于${mn}的事：${userPersona} | ${userMemories}
+
+现在你在 ${postAuthor} 的朋友圈下进行对话。
+
+${postText ? '这条朋友圈的文字内容：' + postText : ''}
+${postImagesDesc}
+
+你与 ${mn} 的对话如下：
+${conversationChain}
+
+现在你要继续回复 ${mn}。你的回复必须包含的核心词句：「${reply.text}」
+请以${pn}的身份进行回复，语气自然，用自然通顺的方式，理清「${reply.text}」这些词句内在的联系，并将这些词句串联成逻辑通顺的话语发表完整的回复，要符合你的人设，150 字以内。
 【重要】
-- 你的回复严禁使用任何括号 () 或 描述动作。`;
+- 你的回复严禁使用任何括号 () 或 描述动作的旁白。`;
         const userPrompt = `请进行回复，回复内容必须围绕：「${reply.text}」`;
         
         showNotification('正在展开详情...', 'info', 2000);
@@ -38548,7 +38588,7 @@ ${mn}的回复内容：「${userReplyText}」
         
         const systemPrompt = `你是${pn}，人设：${charPersona}
 你发了一条朋友圈。${post.text ? '你发布的朋友圈文字需要包含的词句：「' + post.text + '」' : ''}${imageDescStr ? '。图片内容描述：' + imageDescStr : ''}
-请以${pn}的视角发布这条朋友圈。要求：你发的朋友圈必须围绕提供的词句和图片描述中的关键信息。语气自然日常，温柔且以你的方式表达爱意，必须符合人设，200字以内。
+请以${pn}的视角发布这条朋友圈。要求：你发的朋友圈内容必须围绕提供的词句和图片描述中的关键信息。语气自然日常，温柔且以你的方式表达爱意，必须符合人设，200字以内。
 【重要】
 - 你的朋友圈内容严禁使用任何括号 () 或 描述动作。`;
         const userPrompt = `请以${pn}的视角发布这条朋友圈`;
