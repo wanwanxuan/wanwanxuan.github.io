@@ -37141,5 +37141,1914 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
     }
 })();
     </script>
+<!-- ==================== 朋友圈功能样式 ==================== -->
+<style>
+/* 朋友圈模态框 */
+#moments-modal .modal-content {
+    max-width: 550px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: 16px;
+}
+.moments-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    flex-shrink: 0;
+}
+.moments-header-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.moments-tabs {
+    display: flex;
+    background: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.moments-tab {
+    flex: 1;
+    padding: 11px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+.moments-tab.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    font-weight: 600;
+}
+.moments-content {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--primary-bg);
+    padding: 0;
+}
+/* 封面区域 */
+.moments-cover-wrap {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    margin-bottom: 22px; 
+    background: linear-gradient(135deg, #2c3e50, #34495e, #4a6fa5);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.moments-cover-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.moments-cover-change-btn {
+    position: absolute;
+    bottom: 10px;
+    left: 12px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s;
+}
+.moments-cover-change-btn:hover {
+    background: rgba(0,0,0,0.55);
+}
+.moments-avatar-inline {
+    position: absolute;
+    bottom: 0px;
+    right: 16px;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    border: 3px solid var(--secondary-bg);
+    background: var(--accent-color);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+}
+.moments-avatar-inline img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.moments-avatar-inline i {
+    font-size: 22px;
+    color: #fff;
+}
+/* 朋友圈帖子 */
+.moment-post {
+    background: var(--secondary-bg);
+    margin: 0 0 10px 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.moment-post-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.moment-post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--accent-color);
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.moment-post-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.moment-post-avatar i {
+    font-size: 18px;
+    color: #fff;
+}
+.moment-post-user {
+    flex: 1;
+    min-width: 0;
+}
+.moment-post-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 2px;
+}
+.moment-post-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+.moment-post-delete {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.moment-post-delete:hover {
+    opacity: 1;
+    color: #ff4757;
+    background: rgba(255,71,87,0.1);
+}
+.moment-post-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: 10px;
+    word-break: break-word;
+}
+.moment-post-images {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.moment-post-images.grid-1 { grid-template-columns: 1fr; }
+.moment-post-images.grid-2 { grid-template-columns: 1fr 1fr; }
+.moment-post-images.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.moment-post-images.grid-4 { grid-template-columns: 1fr 1fr; }
+.moment-post-images.grid-5,
+.moment-post-images.grid-6 { grid-template-columns: 1fr 1fr 1fr; }
+.moment-post-images.grid-7,
+.moment-post-images.grid-8,
+.moment-post-images.grid-9 { grid-template-columns: 1fr 1fr 1fr; }
+.moment-post-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    background: var(--border-color);
+}
+.moment-post-actions {
+    display: flex;
+    gap: 20px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-color);
+    margin-top: 8px;
+}
+.moment-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.moment-action-btn:hover {
+    color: var(--accent-color);
+    background: rgba(var(--accent-color-rgb), 0.06);
+}
+.moment-action-btn.liked {
+    color: #e74c3c;
+}
+/* 评论区域 */
+.moment-comments {
+    background: var(--primary-bg);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 6px;
+}
+.moment-comment {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(var(--accent-color-rgb), 0.06);
+}
+.moment-comment:last-child {
+    border-bottom: none;
+}
+.moment-comment-author {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 3px;
+}
+.moment-comment-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+.moment-comment-expand {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--accent-color);
+    cursor: pointer;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--accent-color-rgb), 0.2);
+    background: rgba(var(--accent-color-rgb), 0.04);
+    transition: all 0.2s;
+}
+.moment-comment-expand:hover {
+    background: rgba(var(--accent-color-rgb), 0.1);
+}
+.moment-comment-expanded {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 8px 10px;
+    margin-top: 6px;
+    background: rgba(var(--accent-color-rgb), 0.04);
+    border-radius: 8px;
+    border-left: 2px solid var(--accent-color);
+}
+.moment-comment-reply {
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-top: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: all 0.2s;
+}
+.moment-comment-reply:hover {
+    color: var(--accent-color);
+    background: rgba(var(--accent-color-rgb), 0.06);
+}
+/* 发布朋友圈 */
+.moments-publish-bar {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+}
+.moments-publish-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 22px;
+    border: 1.5px dashed var(--accent-color);
+    background: rgba(var(--accent-color-rgb), 0.05);
+    color: var(--accent-color);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-family);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+.moments-publish-btn:hover {
+    background: rgba(var(--accent-color-rgb), 0.12);
+    transform: translateY(-1px);
+}
+/* 发布编辑器 */
+.moments-editor-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99990;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.25s ease;
+}
+.moments-editor-overlay.active {
+    display: flex;
+}
+.moments-editor {
+    background: var(--secondary-bg);
+    border-radius: 20px;
+    width: 92%;
+    max-width: 480px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+    animation: modalContentSlideIn 0.3s ease forwards;
+    overflow: hidden;
+}
+.moments-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.moments-editor-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.moments-editor-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--primary-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.moments-editor-close:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+.moments-editor-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.moments-editor-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: var(--font-family);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+    box-sizing: border-box;
+}
+.moments-editor-textarea:focus {
+    border-color: var(--accent-color);
+}
+.moments-editor-images-preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.moments-editor-img-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+    background: var(--primary-bg);
+}
+.moments-editor-img-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.moments-editor-img-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+.moments-editor-img-desc {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 10px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    outline: none;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+}
+.moments-editor-add-img {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 2px dashed var(--border-color);
+    background: var(--primary-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 11px;
+    gap: 4px;
+    transition: all 0.2s;
+}
+.moments-editor-add-img:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+.moments-editor-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+}
+.moments-editor-submit {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: all 0.2s;
+}
+.moments-editor-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.moments-editor-submit:hover:not(:disabled) {
+    opacity: 0.88;
+}
+/* 梦角封面管理 */
+.moments-cover-manager {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.moments-cover-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.moments-cover-option {
+    aspect-ratio: 16/10;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+.moments-cover-option.active {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.3);
+}
+.moments-cover-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.moments-cover-option .cover-option-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.moments-cover-option:hover .cover-option-delete {
+    opacity: 1;
+}
+.moments-cover-add {
+    aspect-ratio: 16/10;
+    border-radius: 10px;
+    border: 2px dashed var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 11px;
+    gap: 4px;
+    transition: all 0.2s;
+}
+.moments-cover-add:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+/* 梦角图片池管理 */
+.moments-image-pool {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 16px;
+}
+.moments-pool-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+}
+.moments-pool-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.moments-pool-item-desc {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 9px;
+    padding: 3px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.moments-pool-item-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.moments-pool-item:hover .moments-pool-item-delete {
+    opacity: 1;
+}
+/* 空状态 */
+.moments-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+.moments-empty i {
+    font-size: 48px;
+    opacity: 0.25;
+    margin-bottom: 12px;
+}
+.moments-empty p {
+    font-size: 14px;
+    font-weight: 500;
+}
+.moments-empty span {
+    font-size: 12px;
+    opacity: 0.6;
+    margin-top: 4px;
+}
+.moments-partner-actions {
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    flex-shrink: 0;
+}
+.moments-partner-action-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-family);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+.moments-partner-action-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+</style>
+
+<!-- ==================== 朋友圈模态框 ==================== -->
+<div class="modal" id="moments-modal">
+    <div class="modal-content">
+        <div class="moments-header">
+            <div class="moments-header-title">
+                <i class="fa-solid fa-face-kiss-wink-heart" style="color: var(--accent-color);"></i>
+                <span>朋友圈</span>
+            </div>
+            <button class="delivery-back-btn" id="moments-close" style="width:30px;height:30px;"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="moments-tabs" id="moments-tabs">
+            <div class="moments-tab active" data-tab="mine">我的</div>
+            <div class="moments-tab" data-tab="partner" id="moments-tab-partner">梦角的</div>
+        </div>
+        <div class="moments-content" id="moments-content"></div>
+    </div>
+</div>
+
+<!-- 发布朋友圈编辑器 -->
+<div class="moments-editor-overlay" id="moments-editor-overlay">
+    <div class="moments-editor">
+        <div class="moments-editor-header">
+            <span class="moments-editor-title">发布朋友圈</span>
+            <button class="moments-editor-close" id="moments-editor-close">✕</button>
+        </div>
+        <div class="moments-editor-body">
+            <textarea class="moments-editor-textarea" id="moments-editor-text" placeholder="这一刻的想法..."></textarea>
+            <div class="moments-editor-images-preview" id="moments-editor-images"></div>
+            <div id="moments-editor-add-area" style="display:none;">
+                <div class="moments-editor-add-img" id="moments-editor-add-img-btn">
+                    <i class="fas fa-image"></i> 添加图片
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="delivery-manage-btn" id="moments-editor-local-btn" style="padding:8px 14px;font-size:12px;">
+                    <i class="fas fa-upload"></i> 本地图片
+                </button>
+                <button class="delivery-manage-btn" id="moments-editor-url-btn" style="padding:8px 14px;font-size:12px;">
+                    <i class="fas fa-link"></i> 图片链接
+                </button>
+            </div>
+            <input type="file" id="moments-local-input" accept="image/*" multiple style="display:none;">
+        </div>
+        <div class="moments-editor-footer">
+            <button class="delivery-manage-btn" id="moments-editor-cancel" style="flex:1;padding:12px;">取消</button>
+            <button class="moments-editor-submit" id="moments-editor-submit">发布</button>
+        </div>
+    </div>
+</div>
+
+<!-- 梦角封面/图片池管理面板 -->
+<div class="moments-editor-overlay" id="moments-cover-manager-overlay">
+    <div class="moments-editor" style="max-width:420px;">
+        <div class="moments-editor-header">
+            <span class="moments-editor-title" id="moments-cover-manager-title">管理封面</span>
+            <button class="moments-editor-close" id="moments-cover-manager-close">✕</button>
+        </div>
+        <div class="moments-editor-body" id="moments-cover-manager-body"></div>
+        <div class="moments-editor-footer">
+            <button class="delivery-manage-btn" id="moments-cover-manager-cancel" style="flex:1;padding:12px;">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+    
+    const MOMENTS_KEY = 'moments_data_v1';
+    const MOMENTS_SCHEDULE_KEY = 'moments_schedule_v1';
+    
+    // 朋友圈数据
+    let momentsData = {
+        myCover: null,
+        partnerCover: null,
+        partnerCoverOptions: [],  // [{id, url}]
+        partnerImagePool: [],     // [{id, url, description}]
+        posts: []                 // 所有帖子
+    };
+    
+    let currentMomentsTab = 'mine';
+    let momentsEditorImages = [];  // [{url, description}]
+    
+    function getPartnerName() {
+        return (typeof settings !== 'undefined' && settings.partnerName) ? settings.partnerName : '梦角';
+    }
+    function getMyName() {
+        return (typeof settings !== 'undefined' && settings.myName) ? settings.myName : '我';
+    }
+    
+    function loadMomentsData() {
+        try {
+            const saved = localStorage.getItem(MOMENTS_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                momentsData = {
+                    myCover: parsed.myCover || null,
+                    partnerCover: parsed.partnerCover || null,
+                    partnerCoverOptions: Array.isArray(parsed.partnerCoverOptions) ? parsed.partnerCoverOptions : [],
+                    partnerImagePool: Array.isArray(parsed.partnerImagePool) ? parsed.partnerImagePool : [],
+                    posts: Array.isArray(parsed.posts) ? parsed.posts : []
+                };
+            }
+        } catch(e) {
+            console.error('加载朋友圈数据失败', e);
+            momentsData = { myCover: null, partnerCover: null, partnerCoverOptions: [], partnerImagePool: [], posts: [] };
+        }
+    }
+    
+    function saveMomentsData() {
+        try {
+            localStorage.setItem(MOMENTS_KEY, JSON.stringify(momentsData));
+        } catch(e) {
+            console.error('保存朋友圈数据失败', e);
+        }
+    }
+    
+    function getTogetherData() {
+        try {
+            const saved = localStorage.getItem('together_data');
+            if (saved) return JSON.parse(saved);
+        } catch(e) {}
+        return null;
+    }
+    
+    // 获取随机字卡内容
+    function getRandomReplyText(minCount, maxCount) {
+        const replyPool = (typeof customReplies !== 'undefined' && customReplies.length > 0)
+            ? customReplies
+            : (typeof CONSTANTS !== 'undefined' && CONSTANTS.REPLY_MESSAGES && CONSTANTS.REPLY_MESSAGES.length > 0
+                ? CONSTANTS.REPLY_MESSAGES
+                : ['一切安好', '今天很开心', '想你', '天气真好', '要开心哦']);
+        const count = typeof maxCount === 'number' ? minCount + Math.floor(Math.random() * (maxCount - minCount + 1)) : minCount;
+        const shuffled = [...replyPool].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+        if (selected.length === 0) return '今天心情不错 ✦';
+        return selected.join('。') + '。';
+    }
+    
+    // AI调用
+    async function callAI(systemPrompt, userPrompt) {
+        const togetherData = getTogetherData();
+        if (!togetherData || !togetherData.aiSettings || !togetherData.aiSettings.apiUrl || !togetherData.aiSettings.apiKey || !togetherData.aiSettings.model) {
+            return null;
+        }
+        const { apiUrl, apiKey, model, temperature } = togetherData.aiSettings;
+        try {
+            let requestUrl = apiUrl.replace(/\/+$/, '');
+            if (!requestUrl.endsWith('/v1')) requestUrl += '/v1';
+            requestUrl += '/chat/completions';
+            const response = await fetch(requestUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    temperature: temperature || 0.7,
+                    max_tokens: 2048
+                })
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || null;
+        } catch(e) {
+            console.error('AI调用失败', e);
+            return null;
+        }
+    }
+    
+    function getRecentMomentsContext(maxPosts) {
+        const allPosts = momentsData.posts.slice().sort((a, b) => b.timestamp - a.timestamp);
+        const recent = allPosts.slice(0, maxPosts || 10);
+        let ctx = '';
+        const pn = getPartnerName();
+        const mn = getMyName();
+        recent.forEach(post => {
+            const author = post.author === 'me' ? mn : pn;
+            ctx += `\n【${author}的朋友圈 - ${new Date(post.timestamp).toLocaleString()}】\n`;
+            if (post.text) ctx += `内容：${post.text}\n`;
+            if (post.images && post.images.length > 0) {
+                ctx += `图片描述：${post.images.map(img => img.description || '无描述').join('；')}\n`;
+            }
+            if (post.comments && post.comments.length > 0) {
+                post.comments.forEach(c => {
+                    const ca = c.author === 'me' ? mn : pn;
+                    ctx += `  ${ca}评论：${c.text}\n`;
+                    if (c.aiExpandedText) ctx += `    AI解释：${c.aiExpandedText}\n`;
+                    if (c.replies && c.replies.length > 0) {
+                        c.replies.forEach(r => {
+                            const ra = r.author === 'me' ? mn : pn;
+                            ctx += `    回复-${ra}：${r.text}\n`;
+                            if (r.aiExpandedText) ctx += `      AI解释：${r.aiExpandedText}\n`;
+                        });
+                    }
+                });
+            }
+        });
+        return ctx;
+    }
+    
+    // 渲染朋友圈列表
+    function renderMomentsList(tab) {
+        currentMomentsTab = tab;
+        const container = document.getElementById('moments-content');
+        const tabs = document.querySelectorAll('#moments-tabs .moments-tab');
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+        
+        const pn = getPartnerName();
+        const mn = getMyName();
+        const myAvatar = (() => {
+            const img = document.querySelector('#my-avatar img');
+            return img ? img.src : null;
+        })();
+        const partnerAvatar = (() => {
+            const img = document.querySelector('#partner-avatar img');
+            return img ? img.src : null;
+        })();
+        
+        let coverUrl = null;
+        if (tab === 'mine') {
+            coverUrl = momentsData.myCover;
+        } else {
+            coverUrl = momentsData.partnerCover;
+        }
+        
+        // 筛选帖子
+        const posts = momentsData.posts
+            .filter(p => p.author === (tab === 'mine' ? 'me' : 'partner'))
+            .sort((a, b) => b.timestamp - a.timestamp);
+        
+        let html = '';
+        
+        // 封面
+        html += `<div class="moments-cover-wrap">
+            ${coverUrl ? `<img src="${escapeHtml(coverUrl)}" alt="封面">` : '<div style="width:100%;height:100%;background:linear-gradient(135deg,#2c3e50,#4a6fa5);"></div>'}
+            <button class="moments-cover-change-btn" onclick="window.momentsChangeCover('${tab}')">
+                <i class="fas fa-camera"></i> 更换封面
+            </button>
+            <div class="moments-avatar-inline">
+                ${(tab === 'mine' ? myAvatar : partnerAvatar) 
+                    ? `<img src="${escapeHtml(tab === 'mine' ? myAvatar : partnerAvatar)}" alt="">`
+                    : `<i class="fas fa-user"></i>`}
+            </div>
+        </div>`;
+        
+        // 梦角管理按钮
+        if (tab === 'partner') {
+            html += `<div class="moments-partner-actions">
+                <button class="moments-partner-action-btn" onclick="window.openPartnerCoverManager()">
+                    <i class="fas fa-images"></i> 管理封面
+                </button>
+                <button class="moments-partner-action-btn" onclick="window.openPartnerImagePool()">
+                    <i class="fas fa-camera"></i> 管理图片库
+                </button>
+            </div>`;
+        }
+        
+        // 帖子列表
+        if (posts.length === 0) {
+            html += `<div class="moments-empty">
+                <i class="fas fa-camera-retro"></i>
+                <p>${tab === 'mine' ? '还没有发过朋友圈' : pn + '还没有发过朋友圈'}</p>
+                <span>${tab === 'mine' ? '记录下这一刻的想法吧~' : '等待ta分享生活点滴'}</span>
+            </div>`;
+        } else {
+            posts.forEach(post => {
+                const isMe = post.author === 'me';
+                const authorName = isMe ? mn : pn;
+                const avatar = isMe ? myAvatar : partnerAvatar;
+                const timeStr = new Date(post.timestamp).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                
+                html += `<div class="moment-post" data-post-id="${post.id}">
+                    <div class="moment-post-header">
+                        <div class="moment-post-avatar">
+                            ${avatar ? `<img src="${escapeHtml(avatar)}" alt="">` : `<i class="fas fa-user"></i>`}
+                        </div>
+                        <div class="moment-post-user">
+                            <div class="moment-post-name">${escapeHtml(authorName)}</div>
+                            <div class="moment-post-time">${timeStr}</div>
+                        </div>
+                        <button class="moment-post-delete" onclick="window.deleteMomentPost('${post.id}')" title="删除">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>`;
+                
+                if (post.text) {
+                    html += `<div class="moment-post-text">${escapeHtml(post.text).replace(/\n/g, '<br>')}</div>`;
+                }
+                
+                if (post.images && post.images.length > 0) {
+                    const gridClass = `grid-${Math.min(post.images.length, 9)}`;
+                    html += `<div class="moment-post-images ${gridClass}">`;
+                    post.images.forEach(img => {
+                        html += `<img src="${escapeHtml(img.url)}" class="moment-post-img" onclick="if(typeof viewImage==='function')viewImage('${escapeHtml(img.url.replace(/'/g,"\\'"))}')" loading="lazy" onerror="this.style.display='none'">`;
+                    });
+                    html += `</div>`;
+                }
+                
+                // AI解释（仅梦角帖子）
+                if (!isMe && post.aiExplanation) {
+                    html += `<div class="moment-comment-expanded" style="margin-bottom:8px;">
+                        <i class="fa-solid fa-caret-down" style="margin-right:4px;opacity:0.6;"></i>${escapeHtml(post.aiExplanation).replace(/\n/g, '<br>')}
+                    </div>`;
+                }
+                if (!isMe && !post.aiExplanation) {
+                    html += `<div style="margin-bottom:8px;">
+                        <span class="moment-comment-expand" onclick="window.expandMomentAIExplanation('${post.id}')">
+                            <i class="fa-solid fa-caret-down"></i> 展开解读
+                        </span>
+                    </div>`;
+                }
+                
+                // 点赞和评论按钮
+                const likeCount = post.likes ? post.likes.length : 0;
+                const commentCount = post.comments ? post.comments.length : 0;
+                html += `<div class="moment-post-actions">
+                    <button class="moment-action-btn ${post.likes && post.likes.includes('me') ? 'liked' : ''}" onclick="window.toggleMomentLike('${post.id}')">
+                        <i class="fas fa-heart"></i> ${likeCount > 0 ? likeCount : '赞'}
+                    </button>
+                    <button class="moment-action-btn" onclick="window.commentOnMoment('${post.id}')">
+    <i class="fas fa-comment"></i> ${commentCount > 0 ? commentCount : '评论'}
+</button>
+                </div>`;
+                
+                // 评论区域
+                if (post.comments && post.comments.length > 0) {
+                    html += `<div class="moment-comments" id="comments-${post.id}">`;
+                    post.comments.forEach(comment => {
+                        const cAuthor = comment.author === 'me' ? mn : pn;
+                        html += `<div class="moment-comment">
+                            <div class="moment-comment-author">${escapeHtml(cAuthor)}</div>
+                            <div class="moment-comment-text">${escapeHtml(comment.text)}</div>`;
+                        if (comment.aiExpandedText) {
+                            html += `<div class="moment-comment-expanded">
+                                <i class="fa-solid fa-chevron-right" style="margin-right:3px;opacity:0.5;"></i>${escapeHtml(comment.aiExpandedText).replace(/\n/g, '<br>')}
+                            </div>`;
+                        } else if (comment.author === 'partner') {
+                            html += `<span class="moment-comment-expand" onclick="window.expandCommentAI('${post.id}','${comment.id}')">
+                                <i class="fas fa-caret-down"></i> 展开解读
+                            </span>`;
+                        }
+                        // 回复
+                        if (comment.replies && comment.replies.length > 0) {
+                            comment.replies.forEach(reply => {
+                                const rAuthor = reply.author === 'me' ? mn : pn;
+                                html += `<div style="margin-left:16px;padding:4px 0;border-top:1px dashed rgba(var(--accent-color-rgb),0.05);">
+                                    <div class="moment-comment-author" style="font-size:11px;">${escapeHtml(rAuthor)}</div>
+                                    <div class="moment-comment-text" style="font-size:12px;">${escapeHtml(reply.text)}</div>`;
+                                if (reply.aiExpandedText) {
+                                    html += `<div class="moment-comment-expanded" style="font-size:11px;">
+                                        <i class="fa-solid fa-chevron-right" style="margin-right:3px;opacity:0.5;"></i>${escapeHtml(reply.aiExpandedText).replace(/\n/g, '<br>')}
+                                    </div>`;
+                                } else if (reply.author === 'partner') {
+                                    html += `<span class="moment-comment-expand" style="font-size:10px;" onclick="window.expandReplyAI('${post.id}','${comment.id}','${reply.id}')">
+                                        <i class="fas fa-caret-down"></i> 展开解读
+                                    </span>`;
+                                }
+                                html += `</div>`;
+                            });
+                        }
+                        // 回复按钮
+                        html += `<span class="moment-comment-reply" onclick="window.replyToMomentComment('${post.id}','${comment.id}')">
+                            <i class="fas fa-reply"></i> 回复
+                        </span>`;
+                        html += `</div>`;
+                    });
+                    html += `</div>`;
+                }
+                
+                html += `</div>`;
+            });
+        }
+        
+        // 发布按钮（仅"我的"）
+        if (tab === 'mine') {
+            html += `<div class="moments-publish-bar">
+                <button class="moments-publish-btn" onclick="window.openMomentEditor()">
+                    <i class="fas fa-pen"></i> 发布朋友圈
+                </button>
+            </div>`;
+        }
+        
+        container.innerHTML = html;
+        container.scrollTop = 0;
+    }
+    
+    // 更换封面
+    window.momentsChangeCover = function(tab) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;';
+        overlay.innerHTML = `
+            <div style="background:var(--secondary-bg);border-radius:20px;padding:24px;width:88%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:modalContentSlideIn 0.3s ease forwards;">
+                <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-image"></i> 更换封面
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <button class="delivery-checkout-btn" id="cover-local-btn" style="background:var(--accent-color);">
+                        <i class="fas fa-upload"></i> 选择本地图片
+                    </button>
+                    <button class="delivery-checkout-btn" id="cover-url-btn" style="background:var(--accent-color);opacity:0.8;">
+                        <i class="fas fa-link"></i> 使用图片链接
+                    </button>
+                    <button class="delivery-manage-btn" id="cover-cancel-btn" style="padding:12px;">取消</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => overlay.remove();
+        overlay.addEventListener('click', e => { if(e.target === overlay) close(); });
+        overlay.querySelector('#cover-cancel-btn').onclick = close;
+        
+        overlay.querySelector('#cover-local-btn').onclick = () => {
+            close();
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { showNotification('图片不能超过5MB', 'error'); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    if (tab === 'mine') momentsData.myCover = ev.target.result;
+                    else momentsData.partnerCover = ev.target.result;
+                    saveMomentsData();
+                    renderMomentsList(tab);
+                    showNotification('封面已更新 ✨', 'success');
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        };
+        overlay.querySelector('#cover-url-btn').onclick = () => {
+            close();
+            const url = prompt('请输入封面图片的URL链接：');
+            if (url && url.trim()) {
+                if (tab === 'mine') momentsData.myCover = url.trim();
+                else momentsData.partnerCover = url.trim();
+                saveMomentsData();
+                renderMomentsList(tab);
+                showNotification('封面已更新 ✨', 'success');
+            }
+        };
+    };
+    
+    // 打开朋友圈编辑器
+    window.openMomentEditor = function() {
+        const overlay = document.getElementById('moments-editor-overlay');
+        document.getElementById('moments-editor-text').value = '';
+        momentsEditorImages = [];
+        renderEditorImages();
+        overlay.classList.add('active');
+        updateEditorSubmitBtn();
+    };
+    
+    function renderEditorImages() {
+        const container = document.getElementById('moments-editor-images');
+        const addArea = document.getElementById('moments-editor-add-area');
+        if (momentsEditorImages.length === 0) {
+            container.innerHTML = '';
+            addArea.style.display = 'block';
+        } else {
+            container.innerHTML = momentsEditorImages.map((img, idx) => `
+                <div class="moments-editor-img-item">
+                    <img src="${escapeHtml(img.url)}" alt="">
+                    <button class="moments-editor-img-remove" data-idx="${idx}">✕</button>
+                    <input type="text" class="moments-editor-img-desc" placeholder="图片描述(仅AI理解)" value="${escapeHtml(img.description || '')}" data-idx="${idx}" onchange="window.updateEditorImageDesc(${idx}, this.value)">
+                </div>`).join('');
+            addArea.style.display = momentsEditorImages.length < 9 ? 'block' : 'none';
+        }
+        container.querySelectorAll('.moments-editor-img-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.idx);
+                momentsEditorImages.splice(idx, 1);
+                renderEditorImages();
+                updateEditorSubmitBtn();
+            });
+        });
+        updateEditorSubmitBtn();
+    }
+    
+    window.updateEditorImageDesc = function(idx, val) {
+        if (momentsEditorImages[idx]) {
+            momentsEditorImages[idx].description = val;
+        }
+    };
+    
+    function updateEditorSubmitBtn() {
+        const text = document.getElementById('moments-editor-text').value.trim();
+        const hasContent = text.length > 0 || momentsEditorImages.length > 0;
+        document.getElementById('moments-editor-submit').disabled = !hasContent;
+    }
+    
+    function addEditorImage(url) {
+        if (momentsEditorImages.length >= 9) {
+            showNotification('最多只能添加9张图片', 'warning');
+            return;
+        }
+        momentsEditorImages.push({ url, description: '' });
+        renderEditorImages();
+        updateEditorSubmitBtn();
+    }
+    
+    // 发布朋友圈
+    function publishMoment() {
+        const text = document.getElementById('moments-editor-text').value.trim();
+        if (!text && momentsEditorImages.length === 0) {
+            showNotification('请至少填写文字或添加图片', 'warning');
+            return;
+        }
+        const post = {
+            id: 'moment_' + Date.now(),
+            author: 'me',
+            text: text,
+            images: momentsEditorImages.map(img => ({ url: img.url, description: img.description || '' })),
+            timestamp: Date.now(),
+            likes: [],
+            comments: [],
+            aiExplanation: null
+        };
+        momentsData.posts.push(post);
+        saveMomentsData();
+        
+        document.getElementById('moments-editor-overlay').classList.remove('active');
+        document.getElementById('moments-editor-text').value = '';
+        momentsEditorImages = [];
+        renderEditorImages();
+        renderMomentsList('mine');
+        showNotification('朋友圈已发布 ✨', 'success');
+        
+        // 梦角在5分钟内点赞评论
+        schedulePartnerInteraction(post.id, 5 * 60 * 1000);
+    }
+    
+    function schedulePartnerInteraction(postId, maxDelay) {
+        const delay = Math.random() * maxDelay;
+        setTimeout(() => {
+            loadMomentsData();
+            const post = momentsData.posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            if (!post.likes) post.likes = [];
+            if (!post.likes.includes('partner')) {
+                post.likes.push('partner');
+            }
+            
+            const commentText = getRandomReplyText(2, 3);
+            const comment = {
+                id: 'cmt_' + Date.now(),
+                author: 'partner',
+                text: commentText,
+                aiExpandedText: null,
+                timestamp: Date.now(),
+                replies: []
+            };
+            if (!post.comments) post.comments = [];
+            post.comments.push(comment);
+            saveMomentsData();
+            
+            const pn = getPartnerName();
+            if (typeof addMessage === 'function') {
+                addMessage({
+                    id: Date.now() + 1,
+                    sender: 'system',
+                    text: `${pn} 评论了你的朋友圈 ✦`,
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+            }
+            
+            if (currentMomentsTab === 'mine') renderMomentsList('mine');
+            showNotification(`${pn} 点赞并评论了你的朋友圈 ✦`, 'success', 3000);
+        }, delay);
+    }
+    
+    // 展开评论AI解读
+    window.expandCommentAI = async function(postId, commentId) {
+        loadMomentsData();
+        const post = momentsData.posts.find(p => p.id === postId);
+        if (!post) return;
+        const comment = post.comments.find(c => c.id === commentId);
+        if (!comment) return;
+        if (comment.aiExpandedText) return;
+        
+        const togetherData = getTogetherData();
+        const pn = getPartnerName();
+        const mn = getMyName();
+        const charPersona = togetherData?.charPersona || '';
+        const charMemories = togetherData?.charMemories || '';
+        const userPersona = togetherData?.userPersona || '';
+        const userMemories = togetherData?.userMemories || '';
+        
+        const recentCtx = getRecentMomentsContext(5);
+        
+        const systemPrompt = `你是${pn}，以下是你的设定：
+人设：${charPersona}
+关于你的事：${charMemories}
+关于${mn}的事：${userPersona} | ${userMemories}
+
+你在朋友圈给${mn}的一条朋友圈写了评论。你的评论必须严格包含的内容：「${comment.text}」
+请以${pn}的身份，用自然通顺的方式在包含「${comment.text}」的内容基础上发表评论。
+要求：语气自然，符合你的人设，150字以内。
+
+近期朋友圈互动记录：${recentCtx}`;
+        
+        const userPrompt = `请以${pn}的身份发表你对这条朋友圈的评论，你的评论必须包含的内容：「${comment.text}」`;
+        
+        showNotification('正在展开评论详情...', 'info', 2000);
+        const aiResult = await callAI(systemPrompt, userPrompt);
+        if (aiResult) {
+            comment.aiExpandedText = aiResult;
+            saveMomentsData();
+            renderMomentsList(currentMomentsTab);
+        } else {
+            comment.aiExpandedText = `（${pn}的评论：「${comment.text}」——ta想表达的就是字面意思呢 ✦）`;
+            saveMomentsData();
+            renderMomentsList(currentMomentsTab);
+            showNotification('AI解读失败，使用默认解释', 'warning');
+        }
+    };
+    
+    // 展开回复AI解读
+    window.expandReplyAI = async function(postId, commentId, replyId) {
+        loadMomentsData();
+        const post = momentsData.posts.find(p => p.id === postId);
+        if (!post) return;
+        const comment = post.comments.find(c => c.id === commentId);
+        if (!comment) return;
+        const reply = comment.replies.find(r => r.id === replyId);
+        if (!reply) return;
+        if (reply.aiExpandedText) return;
+        
+        const togetherData = getTogetherData();
+        const pn = getPartnerName();
+        const mn = getMyName();
+        
+        const systemPrompt = `你是${pn}，在朋友圈回复中，必须包含的内容：「${reply.text}」
+请以${pn}的身份进行回复。必须严格包含「${reply.text}」的核心内容并适当润色。150字以内。`;
+        const userPrompt = `请进行回复，回复内容必须包含：「${reply.text}」`;
+        
+        showNotification('正在展开详情...', 'info', 2000);
+        const aiResult = await callAI(systemPrompt, userPrompt);
+        if (aiResult) {
+            reply.aiExpandedText = aiResult;
+            saveMomentsData();
+            renderMomentsList(currentMomentsTab);
+        } else {
+            reply.aiExpandedText = `（${pn}的回复：「${reply.text}」——就是字面意思啦 ✦）`;
+            saveMomentsData();
+            renderMomentsList(currentMomentsTab);
+        }
+    };
+    
+    // 展开梦角朋友圈AI解释
+    window.expandMomentAIExplanation = async function(postId) {
+        loadMomentsData();
+        const post = momentsData.posts.find(p => p.id === postId);
+        if (!post) return;
+        if (post.aiExplanation) return;
+        
+        const togetherData = getTogetherData();
+        const pn = getPartnerName();
+        const mn = getMyName();
+        const charPersona = togetherData?.charPersona || '';
+        
+        let imageDescStr = '';
+        if (post.images && post.images.length > 0) {
+            imageDescStr = post.images.map(img => img.description || '一张图片').join('；');
+        }
+        
+        const systemPrompt = `你是${pn}，人设：${charPersona}
+你发了一条朋友圈。${post.text ? '你发布的朋友圈文字需要包含的内容：「' + post.text + '」' : ''}${imageDescStr ? '。图片内容描述：' + imageDescStr : ''}
+请以${pn}的视角发布这条朋友圈。要求：你发的朋友圈必须严格围绕朋友圈的文字内容和图片描述中的关键信息。语气自然，符合人设，200字以内。`;
+        const userPrompt = `请以${pn}的视角发布这条朋友圈`;
+        
+        showNotification('正在展开朋友圈详情...', 'info', 2000);
+        const aiResult = await callAI(systemPrompt, userPrompt);
+        if (aiResult) {
+            post.aiExplanation = aiResult;
+            saveMomentsData();
+            renderMomentsList(currentMomentsTab);
+        } else {
+            post.aiExplanation = `（${pn}分享了这条朋友圈，ta想表达的就是这些呢 ✦）`;
+            saveMomentsData();
+            renderMomentsList(currentMomentsTab);
+        }
+    };
+    
+    // 点赞
+    window.toggleMomentLike = function(postId) {
+        loadMomentsData();
+        const post = momentsData.posts.find(p => p.id === postId);
+        if (!post) return;
+        if (!post.likes) post.likes = [];
+        const idx = post.likes.indexOf('me');
+        if (idx >= 0) {
+            post.likes.splice(idx, 1);
+        } else {
+            post.likes.push('me');
+        }
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+    };
+    // 评论朋友圈帖子（不是回复已有评论）
+window.commentOnMoment = function(postId) {
+    const text = prompt('写下你的评论：');
+    if (!text || !text.trim()) return;
+    
+    loadMomentsData();
+    const post = momentsData.posts.find(p => p.id === postId);
+    if (!post) return;
+    
+    // 添加评论
+    const comment = {
+        id: 'cmt_' + Date.now(),
+        author: 'me',
+        text: text.trim(),
+        aiExpandedText: null,
+        timestamp: Date.now(),
+        replies: []
+    };
+    if (!post.comments) post.comments = [];
+    post.comments.push(comment);
+    saveMomentsData();
+    
+    // 立即刷新当前视图
+    if (currentMomentsTab === 'partner' || currentMomentsTab === 'mine') {
+        renderMomentsList(currentMomentsTab);
+    }
+    showNotification('评论成功 ✦', 'success');
+    
+    // 梦角在1分钟内回复
+    const delay = Math.random() * 60 * 1000;
+    setTimeout(() => {
+        loadMomentsData();
+        const latestPost = momentsData.posts.find(p => p.id === postId);
+        if (!latestPost) return;
+        const latestComment = latestPost.comments.find(c => c.id === comment.id);
+        if (!latestComment) return;
+        
+        const partnerReplyText = getRandomReplyText(2, 3);
+        const partnerReply = {
+            id: 'reply_' + Date.now(),
+            author: 'partner',
+            text: partnerReplyText,
+            aiExpandedText: null,
+            timestamp: Date.now()
+        };
+        if (!latestComment.replies) latestComment.replies = [];
+        latestComment.replies.push(partnerReply);
+        saveMomentsData();
+        
+        if (currentMomentsTab === 'partner' || currentMomentsTab === 'mine') {
+            renderMomentsList(currentMomentsTab);
+        }
+        showNotification(`${getPartnerName()} 回复了你的评论 ✦`, 'success', 3000);
+    }, delay);
+};
+    // 回复评论
+    window.replyToMomentComment = function(postId, commentId) {
+        const replyText = prompt('输入你的回复：');
+        if (!replyText || !replyText.trim()) return;
+        
+        loadMomentsData();
+        const post = momentsData.posts.find(p => p.id === postId);
+        if (!post) return;
+        const comment = post.comments.find(c => c.id === commentId);
+        if (!comment) return;
+        
+        const reply = {
+            id: 'reply_' + Date.now(),
+            author: 'me',
+            text: replyText.trim(),
+            aiExpandedText: null,
+            timestamp: Date.now()
+        };
+        if (!comment.replies) comment.replies = [];
+        comment.replies.push(reply);
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+        showNotification('回复成功 ✦', 'success');
+        
+        // 梦角1分钟内回复
+        const delay = Math.random() * 60 * 1000;
+        setTimeout(() => {
+            loadMomentsData();
+            const currentPost = momentsData.posts.find(p => p.id === postId);
+            if (!currentPost) return;
+            const currentComment = currentPost.comments.find(c => c.id === commentId);
+            if (!currentComment) return;
+            
+            const partnerReplyText = getRandomReplyText(2, 3);
+            const partnerReply = {
+                id: 'reply_' + Date.now(),
+                author: 'partner',
+                text: partnerReplyText,
+                aiExpandedText: null,
+                timestamp: Date.now()
+            };
+            if (!currentComment.replies) currentComment.replies = [];
+            currentComment.replies.push(partnerReply);
+            saveMomentsData();
+            if (currentMomentsTab === 'mine') renderMomentsList('mine');
+            showNotification(`${getPartnerName()} 回复了你的评论 ✦`, 'success', 3000);
+        }, delay);
+    };
+    
+    // 删除帖子
+    window.deleteMomentPost = function(postId) {
+        if (!confirm('确定要删除这条朋友圈吗？')) return;
+        loadMomentsData();
+        momentsData.posts = momentsData.posts.filter(p => p.id !== postId);
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+        showNotification('已删除', 'success');
+    };
+    
+    // 滚动到评论
+    window.scrollToMomentComments = function(postId) {
+        const el = document.getElementById('comments-' + postId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    
+    // 梦角封面管理
+    window.openPartnerCoverManager = function() {
+        const overlay = document.getElementById('moments-cover-manager-overlay');
+        document.getElementById('moments-cover-manager-title').textContent = '管理梦角封面';
+        const body = document.getElementById('moments-cover-manager-body');
+        
+        let html = '<div class="moments-cover-options">';
+        momentsData.partnerCoverOptions.forEach((opt, idx) => {
+            const isActive = momentsData.partnerCover === opt.url;
+            html += `<div class="moments-cover-option${isActive ? ' active' : ''}" onclick="window.selectPartnerCover('${opt.id}')">
+                <img src="${escapeHtml(opt.url)}" onerror="this.style.display='none';this.parentElement.innerHTML+='<div style=width:100%;height:100%;background:#ddd;display:flex;align-items:center;justify-content:center;color:#999;>加载失败</div>'">
+                <button class="cover-option-delete" onclick="event.stopPropagation();window.deletePartnerCoverOption('${opt.id}')">✕</button>
+            </div>`;
+        });
+        html += `<div class="moments-cover-add" onclick="window.addPartnerCoverOption()">
+            <i class="fas fa-plus"></i> 添加封面
+        </div>`;
+        html += '</div>';
+        
+        body.innerHTML = html;
+        overlay.classList.add('active');
+    };
+    
+    window.selectPartnerCover = function(coverId) {
+        const opt = momentsData.partnerCoverOptions.find(o => o.id === coverId);
+        if (opt) {
+            momentsData.partnerCover = opt.url;
+            saveMomentsData();
+            renderMomentsList('partner');
+            window.openPartnerCoverManager();
+            showNotification('封面已切换', 'success');
+        }
+    };
+    
+    window.deletePartnerCoverOption = function(coverId) {
+        if (!confirm('确定删除这个封面吗？')) return;
+        const opt = momentsData.partnerCoverOptions.find(o => o.id === coverId);
+        momentsData.partnerCoverOptions = momentsData.partnerCoverOptions.filter(o => o.id !== coverId);
+        if (opt && momentsData.partnerCover === opt.url) {
+            momentsData.partnerCover = momentsData.partnerCoverOptions.length > 0 ? momentsData.partnerCoverOptions[0].url : null;
+        }
+        saveMomentsData();
+        renderMomentsList('partner');
+        window.openPartnerCoverManager();
+        showNotification('封面已删除', 'success');
+    };
+    
+    window.addPartnerCoverOption = function() {
+        const mode = confirm('点击"确定"选择本地图片，点击"取消"使用图片链接');
+        if (mode) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { showNotification('图片不能超过5MB', 'error'); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    momentsData.partnerCoverOptions.push({ id: 'cover_' + Date.now(), url: ev.target.result });
+                    if (!momentsData.partnerCover) momentsData.partnerCover = ev.target.result;
+                    saveMomentsData();
+                    renderMomentsList('partner');
+                    window.openPartnerCoverManager();
+                    showNotification('封面已添加', 'success');
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        } else {
+            const url = prompt('请输入封面图片URL：');
+            if (url && url.trim()) {
+                momentsData.partnerCoverOptions.push({ id: 'cover_' + Date.now(), url: url.trim() });
+                if (!momentsData.partnerCover) momentsData.partnerCover = url.trim();
+                saveMomentsData();
+                renderMomentsList('partner');
+                window.openPartnerCoverManager();
+                showNotification('封面已添加', 'success');
+            }
+        }
+    };
+    
+    // 梦角图片池管理
+    window.openPartnerImagePool = function() {
+        const overlay = document.getElementById('moments-cover-manager-overlay');
+        document.getElementById('moments-cover-manager-title').textContent = '管理梦角图片库';
+        const body = document.getElementById('moments-cover-manager-body');
+        
+        let html = '<div class="moments-image-pool">';
+        momentsData.partnerImagePool.forEach((item, idx) => {
+            html += `<div class="moments-pool-item">
+                <img src="${escapeHtml(item.url)}" onerror="this.style.display='none'">
+                <div class="moments-pool-item-desc">${escapeHtml(item.description || '无描述')}</div>
+                <button class="moments-pool-item-delete" onclick="window.deletePartnerPoolItem('${item.id}')">✕</button>
+            </div>`;
+        });
+        html += `<div class="moments-cover-add" onclick="window.addPartnerPoolItem()">
+            <i class="fas fa-plus"></i> 添加图片
+        </div>`;
+        html += '</div>';
+        html += '<div style="font-size:11px;color:var(--text-secondary);padding:8px 0;text-align:center;">图片描述用于AI理解图片内容，不会出现在朋友圈中</div>';
+        
+        body.innerHTML = html;
+        overlay.classList.add('active');
+    };
+    
+    window.deletePartnerPoolItem = function(itemId) {
+        if (!confirm('确定删除这张图片吗？')) return;
+        momentsData.partnerImagePool = momentsData.partnerImagePool.filter(i => i.id !== itemId);
+        saveMomentsData();
+        window.openPartnerImagePool();
+        showNotification('已删除', 'success');
+    };
+    
+    window.addPartnerPoolItem = function() {
+        const mode = confirm('点击"确定"选择本地图片，点击"取消"使用图片链接');
+        const addWithDesc = (url) => {
+            const desc = prompt('请为这张图片添加描述（方便AI理解图片内容）：', '一张图片');
+            momentsData.partnerImagePool.push({
+                id: 'pool_' + Date.now(),
+                url: url,
+                description: desc || '一张图片'
+            });
+            saveMomentsData();
+            window.openPartnerImagePool();
+            showNotification('图片已添加', 'success');
+        };
+        if (mode) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { showNotification('图片不能超过5MB', 'error'); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => addWithDesc(ev.target.result);
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        } else {
+            const url = prompt('请输入图片URL：');
+            if (url && url.trim()) addWithDesc(url.trim());
+        }
+    };
+    
+    // 梦角自动发布朋友圈
+    function schedulePartnerMoments() {
+        const today = new Date().toDateString();
+        let schedule;
+        try {
+            schedule = JSON.parse(localStorage.getItem(MOMENTS_SCHEDULE_KEY) || '{}');
+        } catch(e) { schedule = {}; }
+        
+        if (schedule.date === today) return; // 今天已经调度过
+        
+        const count = 1 + Math.floor(Math.random() * 5); // 1-5条
+        const times = [];
+        const now = new Date();
+        const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+        
+        for (let i = 0; i < count; i++) {
+            const randomTime = dayStart + Math.random() * (dayEnd - dayStart - 60 * 60 * 1000) + 30 * 60 * 1000;
+            times.push(randomTime);
+        }
+        times.sort((a, b) => a - b);
+        
+        schedule = { date: today, times: times, posted: [] };
+        localStorage.setItem(MOMENTS_SCHEDULE_KEY, JSON.stringify(schedule));
+        
+        times.forEach(t => {
+            const delay = Math.max(0, t - Date.now());
+            setTimeout(() => {
+                publishPartnerMoment();
+            }, delay);
+        });
+    }
+    
+    function publishPartnerMoment() {
+        loadMomentsData();
+        
+        const schedule = JSON.parse(localStorage.getItem(MOMENTS_SCHEDULE_KEY) || '{}');
+        const today = new Date().toDateString();
+        if (schedule.date !== today) return;
+        
+        const isImagePost = momentsData.partnerImagePool.length > 0 && Math.random() < 0.6;
+        let text = '';
+        let images = [];
+        
+        if (!isImagePost || Math.random() < 0.5) {
+            text = getRandomReplyText(3, 5);
+        }
+        
+        if (isImagePost) {
+            const imgCount = 1 + Math.floor(Math.random() * Math.min(4, momentsData.partnerImagePool.length));
+            const shuffled = [...momentsData.partnerImagePool].sort(() => Math.random() - 0.5);
+            images = shuffled.slice(0, imgCount).map(img => ({ url: img.url, description: img.description || '' }));
+        }
+        
+        if (!text && images.length === 0) {
+            text = getRandomReplyText(3, 5);
+        }
+        
+        const post = {
+            id: 'moment_' + Date.now(),
+            author: 'partner',
+            text: text,
+            images: images,
+            timestamp: Date.now(),
+            likes: [],
+            comments: [],
+            aiExplanation: null
+        };
+        
+        momentsData.posts.push(post);
+        saveMomentsData();
+        
+        if (currentMomentsTab === 'partner') renderMomentsList('partner');
+        const pn = getPartnerName();
+        showNotification(`${pn} 发布了一条朋友圈 ✦`, 'success', 3000);
+        
+        if (typeof addMessage === 'function') {
+            addMessage({
+                id: Date.now() + 1,
+                sender: 'system',
+                text: `${pn} 发布了一条新朋友圈，快去看看吧 ✦`,
+                timestamp: new Date(),
+                type: 'system'
+            });
+        }
+    }
+    
+    // 恢复未完成的调度
+    function restoreSchedule() {
+        try {
+            const schedule = JSON.parse(localStorage.getItem(MOMENTS_SCHEDULE_KEY) || '{}');
+            const today = new Date().toDateString();
+            if (schedule.date !== today) return;
+            
+            schedule.times.forEach(t => {
+                if (schedule.posted && schedule.posted.includes(t)) return;
+                const delay = Math.max(0, t - Date.now());
+                if (delay > 0) {
+                    setTimeout(() => {
+                        publishPartnerMoment();
+                        if (!schedule.posted) schedule.posted = [];
+                        schedule.posted.push(t);
+                        localStorage.setItem(MOMENTS_SCHEDULE_KEY, JSON.stringify(schedule));
+                    }, delay);
+                } else if (delay > -60000) {
+                    // 刚刚过期的也发布
+                    setTimeout(() => publishPartnerMoment(), 100);
+                    if (!schedule.posted) schedule.posted = [];
+                    schedule.posted.push(t);
+                    localStorage.setItem(MOMENTS_SCHEDULE_KEY, JSON.stringify(schedule));
+                }
+            });
+        } catch(e) {}
+    }
+    
+    // 初始化
+    function initMoments() {
+        loadMomentsData();
+        
+        // 高级功能入口
+        const entryBtn = document.createElement('div');
+        entryBtn.className = 'settings-item';
+        entryBtn.id = 'moments-function';
+        entryBtn.innerHTML = '<i class="fa-solid fa-face-kiss-wink-heart"></i><span>朋友圈</span>';
+        entryBtn.addEventListener('click', () => {
+            if (DOMElements && DOMElements.advancedModal && DOMElements.advancedModal.modal) {
+                hideModal(DOMElements.advancedModal.modal);
+            }
+            loadMomentsData();
+            renderMomentsList('mine');
+            showModal(document.getElementById('moments-modal'));
+        });
+        
+        const advancedModal = document.getElementById('advanced-modal');
+        const settingsList = advancedModal?.querySelector('.settings-item-list');
+        if (settingsList) {
+            settingsList.appendChild(entryBtn);
+        }
+        
+        // 标签切换
+        document.querySelectorAll('#moments-tabs .moments-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                renderMomentsList(tab.dataset.tab);
+            });
+        });
+        
+        // 关闭按钮
+        document.getElementById('moments-close').addEventListener('click', () => {
+            hideModal(document.getElementById('moments-modal'));
+        });
+        
+        // 编辑器事件
+        document.getElementById('moments-editor-close').addEventListener('click', () => {
+            document.getElementById('moments-editor-overlay').classList.remove('active');
+        });
+        document.getElementById('moments-editor-cancel').addEventListener('click', () => {
+            document.getElementById('moments-editor-overlay').classList.remove('active');
+        });
+        document.getElementById('moments-editor-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('moments-editor-overlay')) {
+                document.getElementById('moments-editor-overlay').classList.remove('active');
+            }
+        });
+        document.getElementById('moments-editor-submit').addEventListener('click', publishMoment);
+        document.getElementById('moments-editor-text').addEventListener('input', updateEditorSubmitBtn);
+        
+        document.getElementById('moments-editor-local-btn').addEventListener('click', () => {
+            document.getElementById('moments-local-input').click();
+        });
+        document.getElementById('moments-local-input').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('图片不能超过5MB', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => addEditorImage(ev.target.result);
+                reader.readAsDataURL(file);
+            });
+            e.target.value = '';
+        });
+        document.getElementById('moments-editor-url-btn').addEventListener('click', () => {
+            const url = prompt('请输入图片URL链接：');
+            if (url && url.trim()) addEditorImage(url.trim());
+        });
+        document.getElementById('moments-editor-add-img-btn').addEventListener('click', () => {
+            document.getElementById('moments-local-input').click();
+        });
+        
+        // 封面管理面板
+        document.getElementById('moments-cover-manager-close').addEventListener('click', () => {
+            document.getElementById('moments-cover-manager-overlay').classList.remove('active');
+        });
+        document.getElementById('moments-cover-manager-cancel').addEventListener('click', () => {
+            document.getElementById('moments-cover-manager-overlay').classList.remove('active');
+        });
+        document.getElementById('moments-cover-manager-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('moments-cover-manager-overlay')) {
+                document.getElementById('moments-cover-manager-overlay').classList.remove('active');
+            }
+        });
+        
+        // 更新梦角标签名
+        setInterval(() => {
+            const tab = document.getElementById('moments-tab-partner');
+            if (tab) tab.textContent = getPartnerName() + '的';
+        }, 1000);
+        
+        // 初始化调度
+        schedulePartnerMoments();
+        restoreSchedule();
+    }
+    
+    // 导出全局函数
+    window.momentsChangeCover = window.momentsChangeCover;
+    window.openMomentEditor = window.openMomentEditor;
+    window.openPartnerCoverManager = window.openPartnerCoverManager;
+    window.openPartnerImagePool = window.openPartnerImagePool;
+    window.selectPartnerCover = window.selectPartnerCover;
+    window.deletePartnerCoverOption = window.deletePartnerCoverOption;
+    window.addPartnerCoverOption = window.addPartnerCoverOption;
+    window.deletePartnerPoolItem = window.deletePartnerPoolItem;
+    window.addPartnerPoolItem = window.addPartnerPoolItem;
+    window.deleteMomentPost = window.deleteMomentPost;
+    window.toggleMomentLike = window.toggleMomentLike;
+    window.scrollToMomentComments = window.scrollToMomentComments;
+    window.expandCommentAI = window.expandCommentAI;
+    window.expandReplyAI = window.expandReplyAI;
+    window.expandMomentAIExplanation = window.expandMomentAIExplanation;
+    window.replyToMomentComment = window.replyToMomentComment;
+    window.updateEditorImageDesc = window.updateEditorImageDesc;
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMoments);
+    } else {
+        setTimeout(initMoments, 800);
+    }
+})();
+</script>
 </body>
 </html>
