@@ -38435,12 +38435,31 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         
         const recentCtx = getRecentMomentsContext(5);
         
-        const systemPrompt = `你是${pn}，以下是你的设定：
+        // 获取这条朋友圈的完整信息
+const postText = post.text || '';
+let postImagesDesc = '';
+if (post.images && post.images.length > 0) {
+    postImagesDesc = post.images.map(img => img.description || '一张图片').join('；');
+}
+
+// 获取用户自己的评论（如果有的话）
+let userCommentText = '';
+const userComment = post.comments.find(c => c.author === 'me');
+if (userComment) {
+    userCommentText = userComment.text;
+}
+
+const systemPrompt = `你是${pn}，以下是你的设定：
 人设：${charPersona}
 关于你的事：${charMemories}
 关于${mn}的事：${userPersona} | ${userMemories}
 
-你在朋友圈给${mn}的一条朋友圈写了评论。你的评论必须严格包含的内容：「${comment.text}」
+你在朋友圈看到${mn}发了一条朋友圈。
+${postText ? '朋友圈文字内容：' + postText : ''}
+${postImagesDesc ? '朋友圈图片描述：' + postImagesDesc : ''}
+${userCommentText ? mn + '在评论中说：' + userCommentText : ''}
+
+你给这条朋友圈写了评论。你的评论必须严格包含的内容：「${comment.text}」
 请以${pn}的身份，用自然通顺的方式在包含「${comment.text}」的内容基础上发表评论。
 要求：语气自然，符合你的人设，150字以内。
 
@@ -38479,7 +38498,16 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         const pn = getPartnerName();
         const mn = getMyName();
         
-        const systemPrompt = `你是${pn}，在朋友圈回复中，必须包含的内容：「${reply.text}」
+        // 找到用户触发的这条回复的前一条评论（可能是用户自己的评论）
+const parentCommentText = comment.text;  // 梦角回复的那条评论的内容
+// 找到用户刚刚发的回复（触发这次展开的那条回复）
+const userReplyText = reply.author === 'me' ? reply.text : ''; // 一般情况下这里是用户发的
+
+const systemPrompt = `你是${pn}，在朋友圈评论中，${mn}回复了你。
+${mn}的回复内容：「${userReplyText}」
+你的原评论内容：「${parentCommentText}」
+
+现在你需要回复${mn}，你的回复必须包含的内容：「${reply.text}」
 请以${pn}的身份进行回复。必须严格包含「${reply.text}」的核心内容并适当润色。150字以内。
 【重要】
 - 你的回复严禁使用任何括号 () 或 描述动作。`;
