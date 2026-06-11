@@ -38419,58 +38419,44 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         }, delay);
     }
     
-    // 展开评论AI解读
-    window.expandCommentAI = async function(postId, commentId) {
-        loadMomentsData();
-        const post = momentsData.posts.find(p => p.id === postId);
-        if (!post) return;
-        const comment = post.comments.find(c => c.id === commentId);
-        if (!comment) return;
-        if (comment.aiExpandedText) return;
-        
-        const togetherData = getTogetherData();
-        const pn = getPartnerName();
-        const mn = getMyName();
-        const charPersona = togetherData?.charPersona || '';
-        const charMemories = togetherData?.charMemories || '';
-        const userPersona = togetherData?.userPersona || '';
-        const userMemories = togetherData?.userMemories || '';
-        
-        const recentCtx = getRecentMomentsContext(5);
-        
-        // 获取这条朋友圈的完整信息
-const postText = post.text || '';
-let postImagesDesc = '';
-if (post.images && post.images.length > 0) {
-    postImagesDesc = post.images.map(img => img.description || '一张图片').join('；');
-}
-
-// 获取用户自己的评论（如果有的话）
-let userCommentText = '';
-const userComment = post.comments.find(c => c.author === 'me');
-if (userComment) {
-    userCommentText = userComment.text;
-}
-
-// ★ 修复：把朋友圈作者、正文、图片、用户评论一起传给 AI
-const postAuthor = post.author === 'me' ? mn : pn;
-const postText = post.text || '';
-let postImagesDesc = '';
-if (post.images && post.images.length > 0) {
-    postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
-}
-
-// 用户在这条朋友圈下的评论（如果有）
-let userCommentsInPost = '';
-const userComments = post.comments.filter(c => c.author === 'me');
-if (userComments.length > 0) {
-    userCommentsInPost = '\n' + mn + '在这条朋友圈下的评论：';
-    userComments.forEach(c => {
-        userCommentsInPost += '\n' + mn + '评论：' + c.text;
-    });
-}
-
-const systemPrompt = `你是${pn}，以下是你的设定：
+   // 展开评论AI解读
+window.expandCommentAI = async function(postId, commentId) {
+    loadMomentsData();
+    const post = momentsData.posts.find(p => p.id === postId);
+    if (!post) return;
+    const comment = post.comments.find(c => c.id === commentId);
+    if (!comment) return;
+    if (comment.aiExpandedText) return;
+    
+    const togetherData = getTogetherData();
+    const pn = getPartnerName();
+    const mn = getMyName();
+    const charPersona = togetherData?.charPersona || '';
+    const charMemories = togetherData?.charMemories || '';
+    const userPersona = togetherData?.userPersona || '';
+    const userMemories = togetherData?.userMemories || '';
+    
+    const recentCtx = getRecentMomentsContext(5);
+    
+    // ★ 修复：把朋友圈作者、正文、图片、用户评论一起传给 AI
+    const postAuthor = post.author === 'me' ? mn : pn;
+    const postText = post.text || '';
+    let postImagesDesc = '';
+    if (post.images && post.images.length > 0) {
+        postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
+    }
+    
+    // 用户在这条朋友圈下的评论（如果有）
+    let userCommentsInPost = '';
+    const userComments = post.comments.filter(c => c.author === 'me');
+    if (userComments.length > 0) {
+        userCommentsInPost = '\n' + mn + '在这条朋友圈下的评论：';
+        userComments.forEach(c => {
+            userCommentsInPost += '\n' + mn + '评论：' + c.text;
+        });
+    }
+    
+    const systemPrompt = `你是${pn}，以下是你的设定：
 人设：${charPersona}
 关于你的事：${charMemories}
 关于${mn}的事：${userPersona} | ${userMemories}
@@ -38485,59 +38471,59 @@ ${postImagesDesc}
 ${userCommentsInPost}
 
 近期朋友圈互动记录：${recentCtx}`;
-        
-        const userPrompt = `请以${pn}的身份发表你对这条朋友圈的评论，你的评论必须包含的词句：「${comment.text}」`;
-        
-        showNotification('正在展开评论详情...', 'info', 2000);
-        const aiResult = await callAI(systemPrompt, userPrompt);
-        if (aiResult) {
-            comment.aiExpandedText = aiResult;
-            saveMomentsData();
-            renderMomentsList(currentMomentsTab);
-        } else {
-            comment.aiExpandedText = `（${pn}的评论：「${comment.text}」——ta想表达的就是字面意思呢 ✦）`;
-            saveMomentsData();
-            renderMomentsList(currentMomentsTab);
-            showNotification('AI解读失败，使用默认解释', 'warning');
-        }
-    };
+    
+    const userPrompt = `请以${pn}的身份发表你对这条朋友圈的评论，你的评论必须包含的词句：「${comment.text}」`;
+    
+    showNotification('正在展开评论详情...', 'info', 2000);
+    const aiResult = await callAI(systemPrompt, userPrompt);
+    if (aiResult) {
+        comment.aiExpandedText = aiResult;
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+    } else {
+        comment.aiExpandedText = `（${pn}的评论：「${comment.text}」——ta想表达的就是字面意思呢 ✦）`;
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+        showNotification('AI解读失败，使用默认解释', 'warning');
+    }
+};
     
     // 展开回复AI解读
-    window.expandReplyAI = async function(postId, commentId, replyId) {
-        loadMomentsData();
-        const post = momentsData.posts.find(p => p.id === postId);
-        if (!post) return;
-        const comment = post.comments.find(c => c.id === commentId);
-        if (!comment) return;
-        const reply = comment.replies.find(r => r.id === replyId);
-        if (!reply) return;
-        if (reply.aiExpandedText) return;
-        
-        const togetherData = getTogetherData();
-        const pn = getPartnerName();
-        const mn = getMyName();
-        
-        // 找到用户触发的这条回复的前一条评论（可能是用户自己的评论）
-const parentCommentText = comment.text;  // 梦角回复的那条评论的内容
-// 找到用户刚刚发的回复（触发这次展开的那条回复）
-const userReplyText = reply.author === 'me' ? reply.text : ''; // 一般情况下这里是用户发的
-
-// ★ 修复：将朋友圈作者、正文、之前的对话链条传给 AI
-const postAuthor = post.author === 'me' ? mn : pn;
-const postText = post.text || '';
-let postImagesDesc = '';
-if (post.images && post.images.length > 0) {
-    postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
-}
-
-// 构建完整的对话上下文
-let conversationChain = '';
-// 梦角的第一条评论（即当前 comment 的父亲）
-conversationChain += `\n${pn}（你）的初始评论：${comment.text}`;
-// 用户对这条评论的回复（触发回复的那条）
-conversationChain += `\n${mn} 回复：${reply.text}`;
-
-const systemPrompt = `你是${pn}，以下是你的设定：
+window.expandReplyAI = async function(postId, commentId, replyId) {
+    loadMomentsData();
+    const post = momentsData.posts.find(p => p.id === postId);
+    if (!post) return;
+    const comment = post.comments.find(c => c.id === commentId);
+    if (!comment) return;
+    const reply = comment.replies.find(r => r.id === replyId);
+    if (!reply) return;
+    if (reply.aiExpandedText) return;
+    
+    const togetherData = getTogetherData();
+    const pn = getPartnerName();
+    const mn = getMyName();
+    // ★ 补充角色设定
+    const charPersona = togetherData?.charPersona || '';
+    const charMemories = togetherData?.charMemories || '';
+    const userPersona = togetherData?.userPersona || '';
+    const userMemories = togetherData?.userMemories || '';
+    
+    // ★ 修复：将朋友圈作者、正文、之前的对话链条传给 AI
+    const postAuthor = post.author === 'me' ? mn : pn;
+    const postText = post.text || '';
+    let postImagesDesc = '';
+    if (post.images && post.images.length > 0) {
+        postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
+    }
+    
+    // 构建完整的对话上下文
+    let conversationChain = '';
+    // 梦角的第一条评论（即当前 comment 的父亲）
+    conversationChain += `\n${pn}（你）的初始评论：${comment.text}`;
+    // 用户对这条评论的回复（触发回复的那条）
+    conversationChain += `\n${mn} 回复：${reply.text}`;
+    
+    const systemPrompt = `你是${pn}，以下是你的设定：
 人设：${charPersona}
 关于你的事：${charMemories}
 关于${mn}的事：${userPersona} | ${userMemories}
@@ -38554,20 +38540,21 @@ ${conversationChain}
 请以${pn}的身份进行回复，语气自然，用自然通顺的方式，理清「${reply.text}」这些词句内在的联系，并将这些词句串联成逻辑通顺的话语发表完整的回复，要符合你的人设，150 字以内。
 【重要】
 - 你的回复严禁使用任何括号 () 或 描述动作的旁白。`;
-        const userPrompt = `请进行回复，回复内容必须围绕：「${reply.text}」`;
-        
-        showNotification('正在展开详情...', 'info', 2000);
-        const aiResult = await callAI(systemPrompt, userPrompt);
-        if (aiResult) {
-            reply.aiExpandedText = aiResult;
-            saveMomentsData();
-            renderMomentsList(currentMomentsTab);
-        } else {
-            reply.aiExpandedText = `（${pn}的回复：「${reply.text}」——就是字面意思啦 ✦）`;
-            saveMomentsData();
-            renderMomentsList(currentMomentsTab);
-        }
-    };
+
+    const userPrompt = `请进行回复，回复内容必须围绕：「${reply.text}」`;
+    
+    showNotification('正在展开详情...', 'info', 2000);
+    const aiResult = await callAI(systemPrompt, userPrompt);
+    if (aiResult) {
+        reply.aiExpandedText = aiResult;
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+    } else {
+        reply.aiExpandedText = `（${pn}的回复：「${reply.text}」——就是字面意思啦 ✦）`;
+        saveMomentsData();
+        renderMomentsList(currentMomentsTab);
+    }
+};
     
     // 展开梦角朋友圈AI解释
     window.expandMomentAIExplanation = async function(postId) {
