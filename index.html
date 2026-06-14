@@ -38487,70 +38487,80 @@ ${userCommentsInPost}
         showNotification('AI解读失败，使用默认解释', 'warning');
     }
 };
-    
-    // 展开回复AI解读
+    // 展开回复 AI 解读
 window.expandReplyAI = async function(postId, commentId, replyId) {
     loadMomentsData();
-    const post = momentsData.posts.find(p => p.id === postId);
+    const post            = momentsData.posts.find(p => p.id === postId);
     if (!post) return;
-    const comment = post.comments.find(c => c.id === commentId);
+    const comment         = post.comments.find(c => c.id === commentId);
     if (!comment) return;
-    const reply = comment.replies.find(r => r.id === replyId);
+    const reply           = comment.replies.find(r => r.id === replyId);
     if (!reply) return;
     if (reply.aiExpandedText) return;
-    
-    const togetherData = getTogetherData();
-    const pn = getPartnerName();
-    const mn = getMyName();
-    // ★ 补充角色设定
-    const charPersona = togetherData?.charPersona || '';
-    const charMemories = togetherData?.charMemories || '';
-    const userPersona = togetherData?.userPersona || '';
-    const userMemories = togetherData?.userMemories || '';
-    
-    // ★ 修复：将朋友圈作者、正文、之前的对话链条传给 AI
-    const postAuthor = post.author === 'me' ? mn : pn;
-    const postText = post.text || '';
-    let postImagesDesc = '';
+
+    // 这条 reply 一定是梦角发的（UI 只在梦角的消息上显示“展开解读”按钮）
+    if (reply.author !== 'partner') return;
+
+    const togetherData    = getTogetherData();
+    const pn              = getPartnerName();
+    const mn              = getMyName();
+    const charPersona     = togetherData?.charPersona || '';
+    const charMemories    = togetherData?.charMemories || '';
+    const userPersona     = togetherData?.userPersona || '';
+    const userMemories    = togetherData?.userMemories || '';
+
+    // 朋友圈作者
+    const postAuthor      = post.author === 'me' ? mn : pn;
+    const postText        = post.text || '';
+    let   postImagesDesc  = '';
     if (post.images && post.images.length > 0) {
-        postImagesDesc = '图片内容描述：' + post.images.map(img => img.description || '一张图片').join('；');
+        postImagesDesc = '图片：' + post.images.map(img => img.description || '一张图').join('、');
     }
-    
-    // 构建完整的对话上下文
+
+    // 构建完整对话链（按时间顺序）
     let conversationChain = '';
-    // 梦角的第一条评论（即当前 comment 的父亲）
-    conversationChain += `\n${pn}（你）的初始评论：${comment.text}`;
-    // 用户对这条评论的回复（触发回复的那条）
-    conversationChain += `\n${mn} 回复：${reply.text}`;
-    
-    const systemPrompt = `你是${pn}，以下是你的设定：
-人设：${charPersona}
-关于你的事：${charMemories}
-关于${mn}的事：${userPersona} | ${userMemories}
+    conversationChain += `\n${pn}（你）的评论：${comment.text}`;
 
-现在你在 ${postAuthor} 的朋友圈下进行对话。
+    // 找出本条 reply 之前的所有回复（包含用户说的和梦角自己说的其他回复）
+    const allRepliesBefore = comment.replies
+        .filter(r => r.timestamp <= reply.timestamp && r.id !== reply.id)
+        .sort((a, b) => a.timestamp - b.timestamp);
+    allRepliesBefore.forEach(r => {
+        if (r.author === 'me') {
+            conversationChain += `\n${mn} 回复：${r.text}`;
+        } else {
+            conversationChain += `\n${pn}（你）的回复：${r.text}`;
+        }
+    });
 
-${postText ? '这条朋友圈的文字内容：' + postText : ''}
-${postImagesDesc}
+    // 最后是这次要解读的梦角的最新回复
+    conversationChain += `\n${pn}（你）最新的回复：${reply.text}`;
 
-你与 ${mn} 的对话如下：
+    const systemPrompt = `你是 ${pn}，设定如下：
+- 人设：${charPersona}
+- 关于你的事：${charMemories}
+- 关于 ${mn} 的事：${userPersona} | ${userMemories}
+
+你正在看 ${postAuthor} 的朋友圈：
+${postText ? '文字：' + postText : ''}${postImagesDesc}
+
+你在这条朋友圈下与 ${mn} 进行了如下对话：
 ${conversationChain}
-
 现在你要继续回复 ${mn}。你的回复必须包含的核心词句：「${reply.text}」
-请以${pn}的身份进行回复，语气自然，用自然通顺的方式，理清「${reply.text}」这些词句内在的联系，并将这些词句串联成逻辑通顺的话语发表完整的回复，要符合你的人设，150 字以内。
+请以${pn}的身份进行回复，语气自然，用自然通顺的方式，理清「${reply.text}」这些词句内在的联系，并将这些词句串联成逻辑通顺的话语发表完整的回复，要符合你的人设，200 字以内。
 【重要】
-- 你的回复严禁使用任何括号 () 或 描述动作的旁白。`;
+- 你的回复严禁使用任何括号 () 或 描述动作的旁白。
+- 回复内容必须是${pn}说给${mn}的话，不要把${reply.text}中的话认为是对方说的。`;
+    const userPrompt = `请用你自己的话把「${reply.text}」扩写成一段自然的回复。`;
 
-    const userPrompt = `请进行回复，回复内容必须围绕：「${reply.text}」`;
-    
-    showNotification('正在展开详情...', 'info', 2000);
+    showNotification('正在展开详情…', 'info', 2000);
     const aiResult = await callAI(systemPrompt, userPrompt);
     if (aiResult) {
         reply.aiExpandedText = aiResult;
         saveMomentsData();
         renderMomentsList(currentMomentsTab);
     } else {
-        reply.aiExpandedText = `（${pn}的回复：「${reply.text}」——就是字面意思啦 ✦）`;
+        reply.aiExpandedText = `（${pn}的回复：「${reply.text}」）`;
         saveMomentsData();
         renderMomentsList(currentMomentsTab);
     }
