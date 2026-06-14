@@ -39174,5 +39174,601 @@ window.commentOnMoment = function(postId) {
     }
 })();
 </script>
+        <script>
+(function() {
+    /* ========================================
+       静室 · 复古机械打字机
+       ======================================== */
+
+    // ─── 全局状态 ──────────────────────────
+    const CHARACTERS = 'abcdefghijklmnopqrstuvwxyz,.!? ';
+    const MAX_LINE_CHARS = 38;           // 一行约38个字符触发自动换行
+    let paperChars = [];                 // 当前页面的字符数据 (row: [char array])
+    let cursorRow = 0, cursorCol = 0;    // 光标位置
+    let nightMode = false;
+    let automaticTimer = null;           // 自动输入定时器
+
+    // ─── Web Audio 音效引擎 ─────────────────
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    function ensureAudioCtx() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playKeySound(isSpace) {
+    ensureAudioCtx();
+    const now = audioCtx.currentTime;
+    
+    if (isSpace) {
+        // 空格音效（保持不变）
+        const gain = audioCtx.createGain();
+        const osc = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        gain.connect(audioCtx.destination);
+        osc.connect(filter);
+        filter.connect(gain);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.06);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+    } else {
+        // ========== 新音效：低沉金属按键轴 ==========
+        // 撞击声
+        const osc1 = audioCtx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(120, now);
+        osc1.frequency.exponentialRampToValueAtTime(60, now + 0.06);
+        const gain1 = audioCtx.createGain();
+        gain1.gain.setValueAtTime(0.22, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.08);
+
+        // 金属共振噪声
+        const noise = audioCtx.createBufferSource();
+        const bufferSize = Math.floor(audioCtx.sampleRate * 0.06);
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.4;
+        noise.buffer = noiseBuffer;
+        const filterN = audioCtx.createBiquadFilter();
+        filterN.type = 'lowpass';
+        filterN.frequency.setValueAtTime(800, now);
+        filterN.frequency.linearRampToValueAtTime(200, now + 0.05);
+        const gainN = audioCtx.createGain();
+        gainN.gain.setValueAtTime(0.12, now);
+        gainN.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        noise.connect(filterN);
+        filterN.connect(gainN);
+        gainN.connect(audioCtx.destination);
+        noise.start(now);
+        noise.stop(now + 0.07);
+    }
+}
+
+    function playReturnSound() {
+        ensureAudioCtx();
+        const now = audioCtx.currentTime;
+        // 嗖声 (滑动)
+        {
+            const noise = audioCtx.createBufferSource();
+            const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
+            const data = buf.getChannelData(0);
+            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+            noise.buffer = buf;
+            const f = audioCtx.createBiquadFilter();
+            f.type = 'bandpass';
+            f.frequency.setValueAtTime(800, now);
+            f.frequency.linearRampToValueAtTime(200, now + 0.1);
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(0.15, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+            noise.connect(f);
+            f.connect(g);
+            g.connect(audioCtx.destination);
+            noise.start(now);
+            noise.stop(now + 0.12);
+        }
+        // 撞击声 (咚)
+        setTimeout(() => {
+            const att = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(80, att);
+            gain.gain.setValueAtTime(0.3, att);
+            gain.gain.exponentialRampToValueAtTime(0.001, att + 0.15);
+            osc.start(att);
+            osc.stop(att + 0.15);
+        }, 110);
+    }
+
+    // ─── 界面生成 ──────────────────────────
+    function createStillRoom() {
+        if (document.getElementById('still-room-overlay')) return;
+
+        // 注入字体
+        const fontLink = document.createElement('style');
+        fontLink.textContent = `
+            @font-face {
+                font-family: 'Typewriter';
+                src: url('https://files.catbox.moe/l016h6.ttf') format('truetype');
+            }
+        `;
+        document.head.appendChild(fontLink);
+
+        // 全屏遮罩
+        const overlay = document.createElement('div');
+        overlay.id = 'still-room-overlay';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; z-index: 99990;
+            display: flex; align-items: center; justify-content: center;
+            background: url('https://i.postimg.cc/zX3RKnzr/image-1781427490528.png') center/cover no-repeat;
+            transition: filter 0.8s;
+        `;
+
+        // 暗角/光照层
+        const vignette = document.createElement('div');
+        vignette.id = 'still-room-vignette';
+        vignette.style.cssText = `
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
+            pointer-events: none;
+        `;
+        overlay.appendChild(vignette);
+
+        // 主容器 (桌面 + 打字机)
+        const main = document.createElement('div');
+        main.style.cssText = `
+            position: relative; width: 90vw; max-width: 800px; height: 70vh;
+            max-height: 600px; margin-top: 40vh;
+            display: flex; flex-direction: column; align-items: center;
+        `;
+        overlay.appendChild(main);
+
+        // 木头纹理桌面 (偏下)
+        const desk = document.createElement('div');
+        desk.style.cssText = `
+            width: 100%; height: 80%;
+            background: linear-gradient(180deg, #5c4033, #3e2723);
+            border-radius: 20px 20px 0 0;
+            box-shadow: inset 0 8px 30px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.4);
+            position: relative;
+            display: flex; justify-content: center; align-items: flex-end;
+        `;
+        // 木纹 pseudo
+        const woodGrain = document.createElement('div');
+        woodGrain.style.cssText = `
+            position: absolute; inset: 0; border-radius: inherit;
+            background: repeating-linear-gradient(90deg, transparent 0, transparent 8px,
+                rgba(0,0,0,0.08) 8px, rgba(0,0,0,0.08) 10px);
+            opacity: 0.4;
+        `;
+        desk.appendChild(woodGrain);
+
+        // 打字机机身 (放置于桌面之上)
+        const typewriter = document.createElement('div');
+        typewriter.id = 'typewriter-body';
+        typewriter.style.cssText = `
+            position: absolute; bottom: -80px; left: 50%; transform: translateX(-50%);
+            width: 75%; max-width: 600px; height: 100%;
+            background: radial-gradient(circle at 30% 20%, #3a3a3a, #1a1a1a);
+            border-radius: 25px 25px 15px 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7), inset 0 2px 6px rgba(255,255,255,0.15);
+            display: flex; flex-direction: column;
+        `;
+
+        // 碳纤维纹理 overlay
+        const carbon = document.createElement('div');
+        carbon.style.cssText = `
+            position: absolute; inset: 0; border-radius: inherit; opacity: 0.25;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 3px,
+                rgba(255,255,255,0.04) 3px, rgba(255,255,255,0.04) 6px),
+                repeating-linear-gradient(-45deg, transparent, transparent 3px,
+                rgba(255,255,255,0.03) 3px, rgba(255,255,255,0.03) 6px);
+            pointer-events: none;
+        `;
+        typewriter.appendChild(carbon);
+
+        // 滚轴区域 (纸张支架)
+        const rollerSection = document.createElement('div');
+        rollerSection.style.cssText = `
+            position: relative; width: 100%; height: 45%;
+            background: #2c2c2c; border-radius: 20px 20px 0 0;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
+        `;
+        // 滚轴柱
+        const roller = document.createElement('div');
+        roller.style.cssText = `
+            width: 92%; height: 16px; background: linear-gradient(to bottom, #b0b0b0, #888, #666);
+            border-radius: 8px; position: absolute; top: 55%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        `;
+        rollerSection.appendChild(roller);
+        // 左右旋钮
+        ['left','right'].forEach(side => {
+            const knob = document.createElement('div');
+            knob.style.cssText = `
+                position: absolute; top: 48%;
+                ${side}: 2%;
+                width: 28px; height: 28px; border-radius: 50%;
+                background: radial-gradient(circle at 40% 40%, #e0e0e0, #777);
+                box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+            `;
+            rollerSection.appendChild(knob);
+        });
+
+        // 纸张区域 (奶油色纸，可滚动)
+        const paperWrap = document.createElement('div');
+        paperWrap.id = 'paper-wrap';
+        paperWrap.style.cssText = `
+            position: absolute; top: 8%; left: 10%; width: 80%; height: 100%;
+            background: #faf3e0 url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100"25" height="100"25" filter="url(%23noise)" opacity="0.04"/%3E%3C/svg%3E') repeat;
+            border: 1px solid #ddd;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            padding: 12px; box-sizing: border-box;
+            overflow: hidden;
+            font-family: 'Typewriter', 'Courier New', monospace;
+            font-size: 15px; line-height: 1.5;
+            color: #2c2c2c;
+            white-space: pre-wrap;
+            word-break: break-all;
+            letter-spacing: 1px;
+        `;
+        rollerSection.appendChild(paperWrap);
+
+        typewriter.appendChild(rollerSection);
+
+        // 键盘区域
+        const keyboard = document.createElement('div');
+        keyboard.id = 'typewriter-keyboard';
+        keyboard.style.cssText = `
+            width: 100%; height: 55%; background: #2b2b2b;
+            border-radius: 0 0 15px 15px;
+            display: flex; flex-wrap: wrap; justify-content: center;
+            align-items: center; gap: 6px; padding: 12px;
+        `;
+
+        // QWERTY 布局 (简单布局，省略部分)
+        const keyRows = [
+            'qwertyuiop',
+            'asdfghjkl',
+            'zxcvbnm',
+            ',.?!',        // 底部符号行
+        ];
+        const keyElements = {}; // 存储键的 DOM 引用
+        keyRows.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.style.cssText = 'display:flex; gap:5px; justify-content:center; width:100%;';
+            row.split('').forEach(ch => {
+                const key = document.createElement('div');
+                key.className = 'typewriter-key';
+                const isWide = (ch === ' ' || ch === '　');
+                key.style.cssText = `
+                    width: ${isWide ? '48px' : '36px'}; height: 36px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa);
+                    border: 2px solid #666;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6);
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 14px; font-weight: bold; color: #333;
+                    cursor: pointer; user-select: none;
+                    transition: transform 0.08s, box-shadow 0.08s, background 0.08s;
+                    font-family: 'Courier New', monospace;
+                `;
+                key.textContent = ch.toUpperCase();
+                key.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    pressKey(ch, key);
+                });
+                // 触摸
+                key.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    pressKey(ch, key);
+                });
+                keyElements[ch] = key;
+                rowDiv.appendChild(key);
+            });
+            keyboard.appendChild(rowDiv);
+        });
+
+        // 空格键 (大键)
+        const spaceRow = document.createElement('div');
+        spaceRow.style.cssText = 'display:flex; justify-content:center; width:100%; margin-top:4px;';
+        const spaceKey = document.createElement('div');
+        spaceKey.className = 'typewriter-key';
+        spaceKey.style.cssText = `
+            width: 160px; height: 36px; border-radius: 18px;
+            background: radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa);
+            border: 2px solid #666;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: bold; color: #333;
+            cursor: pointer; user-select: none;
+            transition: transform 0.08s, box-shadow 0.08s, background 0.08s;
+        `;
+        spaceKey.textContent = 'SPACE';
+        spaceKey.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            pressKey(' ', spaceKey);
+        });
+        spaceKey.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            pressKey(' ', spaceKey);
+        });
+        keyElements[' '] = spaceKey;
+        spaceRow.appendChild(spaceKey);
+        keyboard.appendChild(spaceRow);
+
+        // 回车键
+        const returnKey = document.createElement('div');
+        returnKey.className = 'typewriter-key';
+        returnKey.style.cssText = `
+            width: 70px; height: 36px; border-radius: 18px;
+            background: radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa);
+            border: 2px solid #666;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold; color: #333;
+            cursor: pointer; user-select: none;
+            transition: transform 0.08s, box-shadow 0.08s, background 0.08s;
+            margin-left: 8px;
+        `;
+        returnKey.textContent = 'RETURN';
+        returnKey.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            handleReturn();
+        });
+        returnKey.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleReturn();
+        });
+        keyElements['\n'] = returnKey;
+        spaceRow.appendChild(returnKey);
+        keyboard.appendChild(spaceRow);
+
+        typewriter.appendChild(keyboard);
+        desk.appendChild(typewriter);
+        main.appendChild(desk);
+
+        // 夜间模式按钮 (右上角)
+        const nightBtn = document.createElement('button');
+        nightBtn.textContent = '🌙';
+        nightBtn.style.cssText = `
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.3);
+            color: white; font-size: 20px; cursor: pointer;
+            backdrop-filter: blur(6px); transition: all 0.3s;
+        `;
+        nightBtn.addEventListener('click', toggleNightMode);
+        overlay.appendChild(nightBtn);
+
+        // 退出按钮 (左上角)
+        const exitBtn = document.createElement('button');
+        exitBtn.innerHTML = '<i class="fas fa-times"></i>';
+        exitBtn.style.cssText = `
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.3);
+            color: white; font-size: 20px; cursor: pointer;
+            backdrop-filter: blur(6px); transition: all 0.3s;
+        `;
+        exitBtn.addEventListener('click', closeStillRoom);
+        overlay.appendChild(exitBtn);
+
+        document.body.appendChild(overlay);
+
+        // 初始化纸张状态
+        initPaper();
+
+        // 启动自动输入
+        startAutoType();
+    }
+
+    // ─── 键盘按下动画 ──────────────────────
+    function pressKey(char, keyElement) {
+        if (!keyElement) return;
+        // 视觉下沉
+        keyElement.style.transform = 'translateY(3px)';
+        keyElement.style.boxShadow = '0 1px 2px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6)';
+        keyElement.style.background = 'radial-gradient(circle at 40% 35%, #d0d0d0, #999)';
+        setTimeout(() => {
+            keyElement.style.transform = '';
+            keyElement.style.boxShadow = '0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6)';
+            keyElement.style.background = 'radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa)';
+        }, 80);
+
+        // 处理字符输入
+        if (char === ' ') {
+            typeCharacter(' ');
+            playKeySound(true);
+        } else if (char === '\n') {
+            handleReturn();
+        } else {
+            typeCharacter(char);
+            playKeySound(false);
+        }
+    }
+
+    // ─── 纸张逻辑 ──────────────────────────
+    function initPaper() {
+        paperChars = [];
+        cursorRow = 0; cursorCol = 0;
+        updatePaperDisplay();
+    }
+
+    function typeCharacter(ch) {
+        if (!paperChars[cursorRow]) paperChars[cursorRow] = [];
+        paperChars[cursorRow][cursorCol] = ch;
+        cursorCol++;
+        if (cursorCol > MAX_LINE_CHARS) {
+            handleReturn();
+        } else {
+            updatePaperDisplay();
+        }
+    }
+
+    function handleReturn() {
+        cursorRow++;
+        cursorCol = 0;
+        // 检查纸张滚动
+        const maxVisibleRows = 12; // 约12行
+        if (cursorRow >= maxVisibleRows) {
+            // 移除最早的行
+            paperChars.shift();
+            cursorRow--;
+        }
+        updatePaperDisplay();
+        playReturnSound();
+        // 纸架向上移动效果
+        const paper = document.getElementById('paper-wrap');
+        if (paper) {
+            paper.style.transform = 'translateY(-2px)';
+            setTimeout(() => { paper.style.transform = ''; }, 100);
+        }
+    }
+
+    function updatePaperDisplay() {
+        const paper = document.getElementById('paper-wrap');
+        if (!paper) return;
+        let html = '';
+        for (let r = 0; r <= cursorRow; r++) {
+            const row = paperChars[r] || [];
+            let line = '';
+            for (let c = 0; c < row.length; c++) {
+                const ch = row[c];
+                if (ch === undefined) break;
+                // 墨水效果：随机旋转、偏移、不透明度
+                const rot = (Math.random() - 0.5) * 3; // ±1.5度
+                const xOff = (Math.random() - 0.5) * 0.8; // px
+                const yOff = (Math.random() - 0.5) * 0.5;
+                const opacity = 0.75 + Math.random() * 0.25;
+                const style = `display:inline-block; transform:rotate(${rot}deg) translate(${xOff}px,${yOff}px); opacity:${opacity};`;
+                line += `<span style="${style}">${ch}</span>`;
+            }
+            // 当前行之后显示光标
+            if (r === cursorRow) {
+                line += '<span class="cursor-blink" style="display:inline-block; width:2px; height:1em; background:#333; animation: blink 1s step-end infinite; vertical-align:middle;"></span>';
+            }
+            html += `<div style="min-height:1.5em;">${line}</div>`;
+        }
+        paper.innerHTML = html;
+        // 始终滚动到底部
+        paper.scrollTop = paper.scrollHeight;
+    }
+
+   function startAutoType() {
+    clearInterval(automaticTimer);
+    automaticTimer = setInterval(() => {
+        const char = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+        if (char === ' ') {
+            typeCharacter(' ');
+            playKeySound(true);
+            const keyEl = keyElements[' '];
+            if (keyEl) animateKey(keyEl);
+        } else if (char === '\n') {
+            handleReturn();
+            const keyEl = keyElements['\n'];
+            if (keyEl) animateKey(keyEl);
+        } else {
+            typeCharacter(char);
+            playKeySound(false);
+            const keyEl = keyElements[char];
+            if (keyEl) animateKey(keyEl);
+        }
+        // 不再调用 animateRandomKey
+    }, 1000 + Math.random() * 6000);
+}
+
+    function animateKey(el) {
+        if (!el) return;
+        el.style.transform = 'translateY(3px)';
+        el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6)';
+        el.style.background = 'radial-gradient(circle at 40% 35%, #d0d0d0, #999)';
+        setTimeout(() => {
+            el.style.transform = '';
+            el.style.boxShadow = '0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6)';
+            el.style.background = 'radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa)';
+        }, 80);
+    }
+    function animateRandomKey() {
+        const keys = document.querySelectorAll('.typewriter-key:not([style*="width: 160px"]):not([style*="width: 70px"])');
+        if (keys.length > 0) {
+            const rnd = keys[Math.floor(Math.random() * keys.length)];
+            animateKey(rnd);
+        }
+    }
+
+    // ─── 夜间模式 ──────────────────────────
+    function toggleNightMode() {
+        nightMode = !nightMode;
+        const vignette = document.getElementById('still-room-vignette');
+        if (nightMode) {
+            // 台灯效果：暖色聚光
+            vignette.style.background = 'radial-gradient(ellipse at center, rgba(255,200,100,0.15) 10%, rgba(0,0,0,0.7) 70%)';
+            document.getElementById('still-room-overlay').style.filter = 'brightness(0.7) sepia(0.2)';
+        } else {
+            vignette.style.background = 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%)';
+            document.getElementById('still-room-overlay').style.filter = '';
+        }
+    }
+
+    function closeStillRoom() {
+        clearInterval(automaticTimer);
+        document.getElementById('still-room-overlay').remove();
+    }
+
+    // ─── 入口注入 ──────────────────────────
+    function addEntryToAdvanced() {
+        const advancedModal = document.getElementById('advanced-modal');
+        if (!advancedModal) return;
+        const list = advancedModal.querySelector('.settings-item-list');
+        if (!list) return;
+        if (document.getElementById('still-room-function')) return;
+        const entry = document.createElement('div');
+        entry.id = 'still-room-function';
+        entry.className = 'settings-item';
+        entry.innerHTML = '<i class="fas fa-feather-alt"></i><span>静室</span>';
+        entry.addEventListener('click', () => {
+            if (typeof hideModal === 'function' && advancedModal) {
+                hideModal(advancedModal);
+            }
+            createStillRoom();
+        });
+        list.appendChild(entry);
+    }
+
+    // 当 DOM 就绪且高级面板存在时注入入口
+    function tryAddEntry() {
+        addEntryToAdvanced();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(tryAddEntry, 1000));
+    } else {
+        setTimeout(tryAddEntry, 1000);
+    }
+
+    // 注入动画所需样式
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+</script>
 </body>
 </html>
