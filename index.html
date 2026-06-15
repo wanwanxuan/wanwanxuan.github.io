@@ -33508,7 +33508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
     // ---------- 礼物图片库 ----------
-    const GIFT_IMAGES = [   
+     const GIFT_IMAGES = [   
   'https://i.postimg.cc/66jdgMH7/image-1779352458274.png',
   'https://i.postimg.cc/HnhXMLJy/image-1779352462383.png',
   'https://i.postimg.cc/T1wnhb3B/image-1779352474092.png',
@@ -33567,7 +33567,45 @@ document.addEventListener('DOMContentLoaded', () => {
   'https://i.postimg.cc/L6k1kRJC/image-1779352394700.png',
   'https://i.postimg.cc/3rvpR2Y4/image-1779352424044.png',
   'https://i.postimg.cc/FHDkqZgJ/image-1779352450457.png',
-  'https://i.postimg.cc/C1Wq7xCs/image-1779352453900.png'
+  'https://i.postimg.cc/C1Wq7xCs/image-1779352453900.png',
+  'https://i.postimg.cc/LXZgPTHN/image-1781177009996.png',
+  'https://i.postimg.cc/8z1vYMHJ/image-1781178032420.png',
+  'https://i.postimg.cc/qMcnQj2P/image-1781178128662.png',
+  'https://i.postimg.cc/3wNv8hVL/image-1781178161844.png',
+  'https://i.postimg.cc/1XwFkK2P/image-1781529988870.png',
+  'https://i.postimg.cc/j2PfphmL/image-1781529993126.png',
+  'https://i.postimg.cc/rsx4B93x/image-1781529997116.png',
+  'https://i.postimg.cc/Xqd5Rgmj/image-1781530000766.png',
+  'https://i.postimg.cc/C5k834Xs/image-1781530004283.png',
+  'https://i.postimg.cc/ryr5R8mP/image-1781530008021.png',
+  'https://i.postimg.cc/G3yvTct0/image-1781530011433.png',
+  'https://i.postimg.cc/HWyb8pnm/image-1781530015125.png',
+  'https://i.postimg.cc/9X7ywW0c/image-1781530018797.png',
+  'https://i.postimg.cc/fW9YSwyb/image-1781530025711.png',
+  'https://i.postimg.cc/X76dwTBN/image-1781530029779.png',
+  'https://i.postimg.cc/gkyR4N3M/image-1781530034015.png',
+  'https://i.postimg.cc/qR9nDFm5/image-1781530038089.png',
+  'https://i.postimg.cc/Y9JgDPXT/image-1781530044505.png',
+  'https://i.postimg.cc/ZR13sQ7m/image-1781530048291.png',
+  'https://i.postimg.cc/C1dHQkwj/image-1781530166686.png',
+  'https://i.postimg.cc/hjwbWvGs/image-1781530219624.png',
+  'https://i.postimg.cc/B6yc9b69/image-1781530242288.png',
+  'https://i.postimg.cc/nrDKHxsg/image-1781530276844.png',
+  'https://i.postimg.cc/9fQGDZwj/image-1781530318131.png',
+  'https://i.postimg.cc/h4kb2X6K/image-1781530356003.png',
+  'https://i.postimg.cc/y8BhzwVs/image-1781530380477.png',
+  'https://i.postimg.cc/NFH8gt9K/image-1781530423467.png',
+  'https://i.postimg.cc/5t2wXLQf/image-1781530463297.png',
+  'https://i.postimg.cc/JhYjZ0j4/image-1781530482804.png',
+  'https://i.postimg.cc/vB1fzyv4/image-1781530513514.png',
+  'https://i.postimg.cc/tT1W5bzz/image-1781530561241.png',
+  'https://i.postimg.cc/vB1fzyv7/image-1781530574901.png',
+  'https://i.postimg.cc/LXqLTSVx/image-1781530592944.png',
+  'https://i.postimg.cc/fL6XqPHB/image-1781530607954.png',
+  'https://i.postimg.cc/50jqRLf4/image-1781532414460.png',
+  'https://i.postimg.cc/sX19N73B/image-1781532445483.png',
+  'https://i.postimg.cc/0QrdBD9j/image-1781532452844.png',
+  'https://i.postimg.cc/9MztnZcD/image-1781532507094.png'
     ];
 
     // ---------- 情话文案库 ----------
@@ -33588,11 +33626,26 @@ document.addEventListener('DOMContentLoaded', () => {
       '我嫉妒你身边每一个无关紧要的人，他们就那样轻而易举见到我朝思暮想的你。',
       '不管怎样，你要多多来信——收信的日子便是节日。吻你。完全属于你、等着你的小狗。吻你吻你再吻你。',
       '你偶然闯入了我并不引以为傲的生活，从那天起，我的生活开始发生变化。我的呼吸变得顺畅了，我讨厌的东西减少了，我可以自由地欣赏值得欣赏的东西了。',
-      '说你需要我，依赖我，想我，喜欢我。'
+      '说你需要我，依赖我，想我，喜欢我。',
+      '我喜欢你给我分享的所有事，即使是小事，我也想听，那样我们的距离就不会远。',
+  '上天让我遇到你，我很幸福，所以我万般珍惜不想让幸福从我手中溜走。',
+  '那些见不到你的日子都成了爱情的养料，现在在你身边的我比任何时候都确信所有的等待都值得。',
+  '我说幸福万万岁，我说你拥有幸福万万年。',
+  '爱的成本太高了，要时间，要见面，要担心，要经历异地会猜疑，会掉眼泪，会胡思乱想，会没有安全感，会敏感，但我想说的是我爱你，也请你给我更多一些耐心，请爱我，好吗？',
+  '谢谢你在世界的角落找到我。',
+  '你一直說我很好，其實一直很好的人是你。',
+  '转动戒指像是抚摸我的异地恋人。',
+  '其实我远比你想象中的更需要你，因为我真的很在意你，你总能左右我的情绪，我喜欢每天早上醒来看到你的消息，我喜欢你看到好看的视频时与我分享的样子，我喜欢你大事小事都跟我说让我感觉到被需要，无论相隔多远，都能让我感受到内心的炽热，我想和你一直走下去，期待你的每一天，更期待和你一起做更多有意义的事，我爱你。',
+  '不喜欢我的人或许很多，但你不可以，因为我在意。',
+  '你没有什么要改变的，我只想爱你，爱你的过去、现在和未来。',
+  '卖萌好累啊，我就站在这里呼吸两下拜托你一直爱我好不好。',
+  '我本不想和风讨论你，可风说可以替我见你。',
+  '我好想你。',
+  '可不可以不要不依赖我。'
     ];
 
     const MAX_DAILY_GIFTS = 3;  // 每天最多3个礼物
-    const GIFT_MIN_INTERVAL = 10 * 60 * 1000;   // 最小间隔10分钟
+    const GIFT_MIN_INTERVAL = 30 * 60 * 1000;   // 最小间隔10分钟
     const GIFT_MAX_INTERVAL = 120 * 60 * 1000;   // 最大间隔45分钟
 
     let giftTimer = null;
