@@ -12111,6 +12111,35 @@ html[data-theme="dark"] .web-embed-content iframe {
 .gift-close-btn:active {
   transform: scale(0.96);
 }
+/* 语音气泡微调 */
+.message .voice-bubble-inner {
+  padding: 4px 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.message .voice-icon {
+  display: inline-flex;
+  color: var(--message-received-text);
+}
+
+.message-sent .voice-icon {
+  color: var(--message-sent-text);
+}
+
+/* 点击态 */
+.message[data-msg-id]:active .voice-bubble-inner {
+  opacity: 0.7;
+}
+/* 语音气泡声波动画 */
+@keyframes wave-anim {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
+}
+/* 如果你希望动画更柔和，可以用以下预设 */
+.wave-bar {
+  transition: height 0.2s;
+}
     </style>
     <style id="css-live-preview-style"></style>
 </head>
@@ -14449,30 +14478,26 @@ html[data-theme="dark"] .web-embed-content iframe {
 </div>
 
 <div id="dg-editor-modal" style="display:none;"></div>
-    <!-- == 核心层 == -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/state.js"></script>
-    <script src="js/core.js"></script>
-
-    <!-- == 功能模块 == -->
-    <script src="js/features/mood.js"></script>
-    <script src="js/features/envelope.js"></script>
-    <script src="js/features/reply-library.js"></script>
-    <script src="js/features/theme-editor.js"></script>
-    <script src="js/features/group-chat.js"></script>
-    <script src="js/features/call.js"></script>
-
-    <!-- == 合并模块 == -->
-    <script src="js/games.js"></script> 
-    <script src="js/features.js"></script> 
-    <script src="js/data.js"></script>
-    <script src="js/onboarding.js"></script> 
-    <script src="js/listeners.js"></script>
-    <script src="js/app.js"></script>
+   
     <script>
         /*应用常量与数据结构*/
+// 从 localStorage 读取 TTS 设置（由“我们在一起”模块保存）
+function getTogetherTtsConfig() {
+  try {
+    const raw = localStorage.getItem('together_data');
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return data.ttsConfig || null;
+  } catch (e) {
+    return null;
+  }
+}
 
+// 判断 TTS 功能是否已配置（API Key 不为空）
+function isTtsReady() {
+  const cfg = getTogetherTtsConfig();
+  return cfg && cfg.apiKey && cfg.apiKey.trim() !== '';
+}
         const APP_PREFIX = 'CHAT_APP_V3_';
         const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
         const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
@@ -16182,7 +16207,106 @@ function initXhsCardSliders() {
         });
     });
 }
+// 内存缓存：会话内避免重复生成（刷新后缓存清空自然失效）
+const _voiceAudioCache = {};
+let voiceGenerating = false;
 
+async function handleVoiceBubbleClick(msg) {
+  if (typeof msg === 'undefined') return;
+  if (voiceGenerating) return;
+
+  // 1. 检查内存缓存（如果已在本会话生成过，直接播放）
+  if (_voiceAudioCache[msg.id]) {
+    const cached = _voiceAudioCache[msg.id];
+    if (cached.audioUrl && cached.audioDuration > 0) {
+      const audio = new Audio(cached.audioUrl);
+      audio.play().catch(e => showNotification('播放失败', 'error'));
+      return;
+    }
+  }
+
+  // 2. 强制重新生成（忽略之前可能保存的无效 voiceUrl）
+  const cfg = getTogetherTtsConfig();
+  if (!cfg || !cfg.apiKey) {
+    showNotification('缺少 MiniMax API 设置', 'warning');
+    return;
+  }
+
+  const voiceText = (msg.voicePrefix || '') + msg.text;
+  voiceGenerating = true;
+
+  try {
+    const requestBody = {
+      model: 'speech-2.8-hd',
+      text: voiceText,
+      stream: false,
+      voice_setting: {
+        voice_id: cfg.voiceId || 'Chinese (Mandarin)_Lyrical_Voice',
+        speed: cfg.speed || 1.0,
+        vol: 1.0,
+        pitch: 0
+      },
+      audio_setting: {
+        sample_rate: 32000,
+        bitrate: 128000,
+        format: 'mp3',
+        channel: 2
+      },
+      pronunciation_dict: { tone: [] },
+      subtitle_enable: false
+    };
+
+    const resp = await fetch('https://api.minimaxi.com/v1/t2a_v2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cfg.apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    const hex = json.data?.audio?.replace(/\s/g, '');
+    if (!hex) throw new Error('无音频数据');
+
+    const byteArray = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) byteArray[i / 2] = parseInt(hex.substr(i, 2), 16);
+    const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+
+    audio.addEventListener('loadedmetadata', () => {
+      // 更新内存缓存和消息对象的时长（用于展示）
+      _voiceAudioCache[msg.id] = {
+        audioUrl: url,
+        audioDuration: audio.duration
+      };
+      msg.voiceDuration = audio.duration;         // 持久化时长（用于界面显示）
+      throttledSaveData();                        // 保存时长到 IndexedDB
+      // 更新 UI 上的时长显示
+      const durEl = document.querySelector(`[data-msg-id="${msg.id}"] .voice-duration`);
+      if (durEl) durEl.textContent = Math.ceil(audio.duration) + '"';
+    });
+
+    audio.play().catch(e => showNotification('播放失败', 'error'));
+
+    // 注意：msg.voiceUrl 不再保存，因为 blob URL 跨会话无效。
+    // 即使之前有冗余保存，这里也不赋值，让它保持为 null。
+    // 这样刷新后 voiceUrl 永远是 null，触发重新生成。
+    if (msg.voiceUrl) {
+      msg.voiceUrl = null;      // 清除旧引用（可选）
+    }
+    throttledSaveData();        // 保存（主要是保存 voiceDuration）
+
+  } catch (error) {
+    console.error(error);
+    showNotification('语音生成失败：' + error.message, 'error');
+  } finally {
+    voiceGenerating = false;
+  }
+}
 
         function renderMessages(preserveScroll = false) {
             const container = DOMElements.chatContainer;
@@ -16246,6 +16370,7 @@ function initXhsCardSliders() {
                     fragment.appendChild(callEvDiv);
                     lastSender = 'system';
                     return;
+
                 }
 // ========== 礼物消息（卡片形式，无气泡）==========
 if (msg.type === 'gift') {
@@ -16379,9 +16504,11 @@ if (msg.type === 'gift') {
                     }
                 }
                 
-                // 在 renderMessages 函数中，替换消息渲染部分
+                // ─── 替换消息渲染部分（从 isImageOnly 定义开始）───
+
 const isImageOnly = !msg.text && !!msg.image;
 const isXhsCard = msg.xhsCard === true;
+const isVoice = msg.type === 'voice';          // ← 新增判断
 
 let messageHTML = '';
 if (msg.replyTo) {
@@ -16390,7 +16517,26 @@ if (msg.replyTo) {
     messageHTML += `<div class="reply-indicator" data-reply-id="${msg.replyTo.id || ''}" style="cursor:pointer;" onclick="scrollToQuotedMessage(this)"><span class="reply-indicator-sender">${repliedSender}</span><span class="reply-indicator-text">${repliedText}</span></div>`;
 }
 
-let content = '';
+// 【核心】语音气泡内容
+if (isVoice) {
+    const duration = msg.voiceDuration > 0 ? Math.ceil(msg.voiceDuration) + '"' : "''";
+    messageHTML += `
+        <div class="voice-bubble-inner" style="display:flex; align-items:center; cursor:pointer;">
+            <span class="voice-icon voice-wave-icon" style="display:flex; align-items:flex-end; gap:2px; height:20px; margin-right:8px;">
+    <span class="wave-bar" style="display:inline-block; width:3px; height:40%; background:currentColor; border-radius:2px; animation: wave-anim 0.8s infinite ease-in-out alternate; animation-delay: 0s;"></span>
+    <span class="wave-bar" style="display:inline-block; width:3px; height:65%; background:currentColor; border-radius:2px; animation: wave-anim 0.8s infinite ease-in-out alternate; animation-delay: 0.15s;"></span>
+    <span class="wave-bar" style="display:inline-block; width:3px; height:100%; background:currentColor; border-radius:2px; animation: wave-anim 0.8s infinite ease-in-out alternate; animation-delay: 0.3s;"></span>
+    <span class="wave-bar" style="display:inline-block; width:3px; height:65%; background:currentColor; border-radius:2px; animation: wave-anim 0.8s infinite ease-in-out alternate; animation-delay: 0.45s;"></span>
+</span>
+            <span class="voice-duration" style="font-family: monospace; font-size:13px;">${duration}</span>
+        </div>
+        <div class="voice-text" style="margin-top:4px; font-size:12px; color:var(--text-secondary); opacity:0.8; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            ${escapeHtml(msg.text || '')}
+        </div>
+    `;
+} else {
+    // 非语音消息的原有逻辑
+    let content = '';
 if (!isXhsCard) {
     content = msg.text ? `<div>${msg.text.replace(/\n/g, '<br>')}</div>` : '';
     if (msg.image) {
@@ -16398,28 +16544,34 @@ if (!isXhsCard) {
     }
 }
 messageHTML += content;
+}
+// ───────────────────────────────────────────
 
 const messageDiv = document.createElement('div');
 
 // 网页嵌入卡片特殊处理 - 不包裹气泡
 const isWebEmbed = msg.webEmbed === true;
-const isInvitationCard = msg.isInvitationCard === true;  // 新增
-                
-// 小红书卡片特殊处理
+const isInvitationCard = msg.isInvitationCard === true;
+
 if (isXhsCard) {
     messageDiv.className = 'xhs-message-wrapper';
     messageDiv.innerHTML = msg.text;
-} else if (isWebEmbed || isInvitationCard) {  // 添加 isInvitationCard
-    // 网页嵌入卡片 / 邀请卡片：不包裹气泡，直接作为独立卡片
+} else if (isWebEmbed || isInvitationCard) {
     messageDiv.className = 'web-embed-message-wrapper';
     messageDiv.innerHTML = msg.text;
-} else if (isImageOnly) {
+} else if (isImageOnly && !isVoice) {
     messageDiv.className = `message message-${msg.sender === 'user' ? 'sent': 'received'} message-image-bubble-none`;
     messageDiv.innerHTML = messageHTML;
 } else {
+    // 语音消息也走这里，使用与普通文本消息完全相同的气泡 class
     messageDiv.className = `message message-${msg.sender === 'user' ? 'sent': 'received'} ${settings.bubbleStyle}`;
+    // 为语音消息添加额外标记，方便事件委托
+    if (isVoice) {
+        messageDiv.classList.add('voice-message');
+    }
     messageDiv.innerHTML = messageHTML;
 }
+// ─── 后面继续原有的 actionsHTML、metaHTML、wrapper 组装 ───
 
 let actionsHTML = '';
                 
@@ -16780,208 +16932,229 @@ if (!isBatchMode && type === 'normal') {
             ro.observe(inputArea);
         })();
 
-        function simulateReply() {
-            function showTypingIndicator() {
-                if (!settings.typingIndicatorEnabled) return;
-                const tiWrapper = document.getElementById('typing-indicator-wrapper');
-                const tiLabel = document.getElementById('typing-indicator-label');
-                const tiAvatar = document.getElementById('typing-indicator-avatar');
-                if (tiLabel) tiLabel.textContent = (settings.partnerName || '对方') + ' 正在输入';
-                if (tiWrapper) { positionTypingIndicator(); tiWrapper.style.display = 'block'; }
-                if (tiAvatar) {
-                    const partnerImg = DOMElements.partner.avatar.querySelector('img');
-                    tiAvatar.innerHTML = partnerImg ? `<img src="${partnerImg.src}">` : '<i class="fas fa-user"></i>';
-                }
-                DOMElements.chatContainer.scrollTop = DOMElements.chatContainer.scrollHeight;
+       function simulateReply() {
+    function showTypingIndicator() {
+        if (!settings.typingIndicatorEnabled) return;
+        const tiWrapper = document.getElementById('typing-indicator-wrapper');
+        const tiLabel = document.getElementById('typing-indicator-label');
+        const tiAvatar = document.getElementById('typing-indicator-avatar');
+        if (tiLabel) tiLabel.textContent = (settings.partnerName || '对方') + ' 正在输入';
+        if (tiWrapper) { positionTypingIndicator(); tiWrapper.style.display = 'block'; }
+        if (tiAvatar) {
+            const partnerImg = DOMElements.partner.avatar.querySelector('img');
+            tiAvatar.innerHTML = partnerImg ? `<img src="${partnerImg.src}">` : '<i class="fas fa-user"></i>';
+        }
+        DOMElements.chatContainer.scrollTop = DOMElements.chatContainer.scrollHeight;
+    }
+
+    showTypingIndicator();
+
+    let changed = false;
+    messages.forEach(msg => {
+        if (msg.sender === 'user' && msg.status !== 'read') {
+            msg.status = 'read'; changed = true;
+        }
+    });
+    if (changed) {
+        renderMessages(false); throttledSaveData();
+    }
+
+    if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
+        const currentPool = [...partnerPersonas];
+        if(currentPool.length > 0) {
+            const nextPersona = currentPool[Math.floor(Math.random() * currentPool.length)];
+            settings.partnerName = nextPersona.name;
+            DOMElements.partner.name.textContent = nextPersona.name;
+            if (nextPersona.avatar) {
+                updateAvatar(DOMElements.partner.avatar, nextPersona.avatar);
+                localforage.setItem(getStorageKey('partnerAvatar'), nextPersona.avatar);
             }
-
-            showTypingIndicator();
-
-            let changed = false;
-            messages.forEach(msg => {
-                if (msg.sender === 'user' && msg.status !== 'read') {
-                    msg.status = 'read'; changed = true;
-                }
+            throttledSaveData();
+        }
+    }
+    if (Math.random() < 0.03) {
+        if (customPokes && customPokes.length > 0) {
+            const randomAction = getRandomItem(customPokes);
+            const pokeTypes = [{
+                prefix: "💫",
+                text: `${settings.partnerName} ${randomAction}`
+            }, {
+                prefix: "✨",
+                text: `${settings.partnerName} ${randomAction}`
+            }, {
+                prefix: "🌟",
+                text: `${settings.partnerName} ${randomAction}`
+            }, {
+                prefix: "🥰",
+                text: `${settings.partnerName} ${randomAction}`
+            }, {
+                prefix: "💖",
+                text: `${settings.partnerName} ${randomAction}`
+            }];
+            const selectedPoke = getRandomItem(pokeTypes);
+            addMessage({
+                id: Date.now(),
+                text: `${selectedPoke.prefix} ${settings.partnerName} ${randomAction} ${selectedPoke.prefix}`,
+                timestamp: new Date(),
+                type: 'system'
             });
-            if (changed) {
-                renderMessages(false); throttledSaveData();
-            }
+            (function(){var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
+            return;
+        }
+    }
 
-if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
-                const currentPool = [
-                    ...partnerPersonas
-                ];
-                if(currentPool.length > 0) {
-                     const nextPersona = currentPool[Math.floor(Math.random() * currentPool.length)];
-                     
-                     settings.partnerName = nextPersona.name;
-                     DOMElements.partner.name.textContent = nextPersona.name;
-                     
-                     if (nextPersona.avatar) {
-                         updateAvatar(DOMElements.partner.avatar, nextPersona.avatar);
-                         localforage.setItem(getStorageKey('partnerAvatar'), nextPersona.avatar);
-                     }
-                     throttledSaveData();
-                }
-            }
-            if (Math.random() < 0.03) {
-                if (customPokes && customPokes.length > 0) {
-        const randomAction = getRandomItem(customPokes);
-                const pokeTypes = [{
-                    prefix: "💫",
-                    text: `${settings.partnerName} ${randomAction}`
-                },
-                    {
-                        prefix: "✨",
-                        text: `${settings.partnerName} ${randomAction}`
-                    },
-                    {
-                        prefix: "🌟",
-                        text: `${settings.partnerName} ${randomAction}`
-                    },
-                    {
-                        prefix: "🥰",
-                        text: `${settings.partnerName} ${randomAction}`
-                    },
-                    {
-                        prefix: "💖",
-                        text: `${settings.partnerName} ${randomAction}`
-                    }];
+    // ──────────── 🔊 语音消息配置 ────────────
+    // 这些常量需要和全局的 isTtsReady() 配合
+    const VOICE_PREFIXES = [
+        '(laughs)', '(chuckle)', '(coughs)', '(clear-throat)',
+        '(groans)', '(breath)', '(pant)', '(inhale)',
+        '(exhale)', '(gasps)', '(sniffs)', '(sighs)',
+        '(snorts)', '(burps)', '(lip-smacking)',
+        '(humming)', '(hissing)', '(emm)', '(sneezes)'
+    ];
+    // 注：isTtsReady() 和 getTogetherTtsConfig() 已在全局定义
+    // ─────────────────────────────────────────
 
-               const selectedPoke = getRandomItem(pokeTypes);
-        
-        addMessage({
-            id: Date.now(),
-            text: `${selectedPoke.prefix} ${settings.partnerName} ${randomAction} ${selectedPoke.prefix}`,
-            timestamp: new Date(),
-            type: 'system'
-        });
+    const replyCount = Math.random() < 0.75 ? 1: (Math.random() < 0.95 ? 2: 3);
+    if (!customReplies || customReplies.length === 0) {
         (function(){var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
+        showNotification('还没有添加字卡，请先到"自定义回复"中添加字卡', 'info', 4000);
         return;
     }
-}
+    let delay = 0;
+    const recentUserMsgs = settings.replyEnabled
+        ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
+        : [];
 
-            const replyCount = Math.random() < 0.75 ? 1: (Math.random() < 0.95 ? 2: 3);
-            if (!customReplies || customReplies.length === 0) {
-                (function(){var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
-                showNotification('还没有添加字卡，请先到"自定义回复"中添加字卡', 'info', 4000);
-                return;
+    for (let i = 0; i < replyCount; i++) {
+        const delayRange = settings.replyDelayMax - settings.replyDelayMin;
+        delay += settings.replyDelayMin + Math.random() * delayRange;
+        setTimeout(() => {
+            let disabledItems = new Set();
+            try {
+                const raw = localStorage.getItem('disabledReplyItems');
+                if (raw) disabledItems = new Set(JSON.parse(raw));
+            } catch(e) {}
+
+            const disabledGroupItems = new Set();
+            const _groups = window.customReplyGroups || [];
+            _groups.forEach(g => {
+                if (g.disabled && Array.isArray(g.items)) {
+                    g.items.forEach(item => disabledGroupItems.add(item));
+                }
+            });
+
+            const replyPool = customReplies.filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r));
+            const replyText = replyPool[Math.floor(Math.random() * replyPool.length)];
+
+            const shouldSendSticker = stickerLibrary && stickerLibrary.length > 0 && Math.random() < 0.2;
+
+            let finalText = replyText;
+            let separateEmoji = null;
+            if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
+                const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
+                if (settings.emojiMixEnabled !== false) {
+                    finalText = Math.random() < 0.5
+                        ? emoji + ' ' + replyText
+                        : replyText + ' ' + emoji;
+                } else {
+                    separateEmoji = emoji;
+                }
             }
-            let delay = 0;
-            const recentUserMsgs = settings.replyEnabled
-                ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
-                : [];
-            for (let i = 0; i < replyCount; i++) {
-                const delayRange = settings.replyDelayMax - settings.replyDelayMin;
-                delay += settings.replyDelayMin + Math.random() * delayRange;
+
+            // ──────────── 🔊 决定是否生成语音消息 ────────────
+            let isVoice = false;
+            let voicePrefix = '';
+            // 只有在 TTS 已配置时才考虑生成语音
+            if (typeof isTtsReady === 'function' && isTtsReady()) {
+                // 每 5 条里随机 0~1 条 ≈ 20% 概率
+                if (Math.random() < 0.2) {
+                    isVoice = true;
+                    voicePrefix = VOICE_PREFIXES[Math.floor(Math.random() * VOICE_PREFIXES.length)];
+                }
+            }
+            // ─────────────────────────────────────────────────
+
+            const msgPayload = {
+                id: Date.now() + i,
+                sender: settings.partnerName || '对方',
+                text: finalText,                     // 原始文字（不含语气词）
+                timestamp: new Date(),
+                status: 'received',
+                favorited: false,
+                note: null,
+                replyTo: (i === 0 && recentUserMsgs.length > 0 && Math.random() < 0.3)
+                    ? (function(){ const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
+                    : null,
+                type: isVoice ? 'voice' : 'normal',  // ← 语音类型
+                voicePrefix: isVoice ? voicePrefix : null,
+                voiceDuration: 0,
+                voiceUrl: null
+            };
+
+            addMessage(msgPayload);
+
+            if (typeof window._sendPartnerNotification === 'function') {
+                window._sendPartnerNotification(settings.partnerName || '对方', finalText);
+            }
+            playSound('message');
+
+            if (shouldSendSticker) {
+                const randomSticker = stickerLibrary[Math.floor(Math.random() * stickerLibrary.length)];
                 setTimeout(() => {
-                    let disabledItems = new Set();
-                    try {
-                        const raw = localStorage.getItem('disabledReplyItems');
-                        if (raw) disabledItems = new Set(JSON.parse(raw));
-                    } catch(e) {}
-
-                    const disabledGroupItems = new Set();
-                    const _groups = window.customReplyGroups || [];
-                    _groups.forEach(g => {
-                        if (g.disabled && Array.isArray(g.items)) {
-                            g.items.forEach(item => disabledGroupItems.add(item));
-                        }
-                    });
-
-                    const replyPool = customReplies.filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r));
-                    const replyText = replyPool[Math.floor(Math.random() * replyPool.length)];
-
-                    const shouldSendSticker = stickerLibrary && stickerLibrary.length > 0 && Math.random() < 0.2;
-
-                    let finalText = replyText;
-                    let separateEmoji = null;
-                    if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
-                        const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
-                        if (settings.emojiMixEnabled !== false) {
-                            finalText = Math.random() < 0.5
-                                ? emoji + ' ' + replyText
-                                : replyText + ' ' + emoji;
-                        } else {
-                            separateEmoji = emoji;
-                        }
-                    }
-
                     addMessage({
-                        id: Date.now() + i,
+                        id: Date.now() + i + 2000,
                         sender: settings.partnerName || '对方',
-                        text: finalText,
+                        text: '',
+                        timestamp: new Date(),
+                        image: randomSticker,
+                        status: 'received',
+                        favorited: false,
+                        note: null,
+                        type: 'normal'
+                    });
+                    playSound('message');
+                    if (typeof window._sendPartnerNotification === 'function') {
+                        window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
+                    }
+                }, 400 + Math.random() * 600);
+            }
+
+            if (separateEmoji) {
+                setTimeout(() => {
+                    addMessage({
+                        id: Date.now() + i + 1000,
+                        sender: settings.partnerName || '对方',
+                        text: separateEmoji,
                         timestamp: new Date(),
                         status: 'received',
                         favorited: false,
                         note: null,
-                        replyTo: (i === 0 && recentUserMsgs.length > 0 && Math.random() < 0.3)
-                            ? (function(){ const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
-                            : null,
                         type: 'normal'
                     });
-                    if (typeof window._sendPartnerNotification === 'function') {
-                        window._sendPartnerNotification(settings.partnerName || '对方', finalText);
-                    }
-                    playSound('message');
-
-                    if (shouldSendSticker) {
-                        const randomSticker = stickerLibrary[Math.floor(Math.random() * stickerLibrary.length)];
-                        setTimeout(() => {
-                            addMessage({
-                                id: Date.now() + i + 2000,
-                                sender: settings.partnerName || '对方',
-                                text: '',
-                                timestamp: new Date(),
-                                image: randomSticker,
-                                status: 'received',
-                                favorited: false,
-                                note: null,
-                                type: 'normal'
-                            });
-                            playSound('message');
-                            if (typeof window._sendPartnerNotification === 'function') {
-                                window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
-                            }
-                        }, 400 + Math.random() * 600);
-                    }
-
-                    if (separateEmoji) {
-                        setTimeout(() => {
-                            addMessage({
-                                id: Date.now() + i + 1000,
-                                sender: settings.partnerName || '对方',
-                                text: separateEmoji,
-                                timestamp: new Date(),
-                                status: 'received',
-                                favorited: false,
-                                note: null,
-                                type: 'normal'
-                            });
-                        }, 300 + Math.random() * 400);
-                    }
-
-                    if (i === replyCount - 1) {
-                        (function() {
-                            var _tiW = document.getElementById('typing-indicator-wrapper');
-                            if (_tiW) {
-                                var _tiInner = _tiW.querySelector('.typing-indicator');
-                                if (_tiInner) {
-                                    _tiInner.classList.add('hiding');
-                                    setTimeout(function() {
-                                        _tiW.style.display = 'none';
-                                        if (_tiInner) _tiInner.classList.remove('hiding');
-                                    }, 240);
-                                } else {
-                                    _tiW.style.display = 'none';
-                                }
-                            }
-                        })();
-                    }
-                }, delay);
+                }, 300 + Math.random() * 400);
             }
-        }
 
+            if (i === replyCount - 1) {
+                (function() {
+                    var _tiW = document.getElementById('typing-indicator-wrapper');
+                    if (_tiW) {
+                        var _tiInner = _tiW.querySelector('.typing-indicator');
+                        if (_tiInner) {
+                            _tiInner.classList.add('hiding');
+                            setTimeout(function() {
+                                _tiW.style.display = 'none';
+                                if (_tiInner) _tiInner.classList.remove('hiding');
+                            }, 240);
+                        } else {
+                            _tiW.style.display = 'none';
+                        }
+                    }
+                })();
+            }
+        }, delay);
+    }
+}
 function showModal(modalElement, focusElement = null) {
             if (modalElement._hideTimeout) {
                 clearTimeout(modalElement._hideTimeout);
@@ -28532,7 +28705,21 @@ function setupEventListeners() {
 
 function initChatActionListeners() {
             DOMElements.chatContainer.addEventListener('click', (e) => {
-
+// 在现有的 DOMElements.chatContainer 'click' 事件处理器内部，合适位置添加：
+const voiceMsg = e.target.closest('.voice-message');
+if (voiceMsg) {
+  const wrapper = voiceMsg.closest('.message-wrapper');
+  if (wrapper) {
+    const msgId = Number(wrapper.dataset.id);
+    const msg = messages.find(m => m.id === msgId);
+    if (msg && msg.type === 'voice') {
+      e.stopPropagation();
+      e.preventDefault();
+      handleVoiceBubbleClick(msg);
+      return;
+    }
+  }
+}
                 if (isBatchFavoriteMode) {
                     const wrapper = e.target.closest('.message-wrapper');
                     if (wrapper && !e.target.closest('.message-meta-actions')) {
@@ -28600,6 +28787,7 @@ if (target.classList.contains('delete-btn')) {
     }
     return;
 }
+
                 if (target.classList.contains('reply-btn')) {
                     currentReplyTo = {
                         id: message.id,
@@ -31367,7 +31555,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.addEventListener('beforeunload', () => {
             _backupCriticalData();
         });
-
+window.addEventListener('beforeunload', () => {
+  Object.values(_voiceAudioCache).forEach(c => {
+    if (c.audioUrl) URL.revokeObjectURL(c.audioUrl);
+  });
+});
         setInterval(() => {
             saveData().catch(e => console.warn('[autoBackup] 定时保存失败:', e));
         }, 3 * 60 * 1000);
@@ -34174,7 +34366,26 @@ if (document.readyState === 'loading') {
                 </div>
                 <button id="save-ai-settings" class="together-btn together-btn-primary" style="margin-top: 12px; width: 100%;">保存 AI 设置</button>
             </div>
-            
+            <div class="together-group" id="tts-settings-group">
+    <label><i class="fas fa-microphone-alt"></i> TTS 语音合成 (MiniMax)</label>
+    <input type="password" id="tts-api-key" class="together-input" placeholder="MiniMax API Key" style="margin-bottom: 8px;">
+    <input type="text" id="tts-voice-id" class="together-input" placeholder="Voice ID" value="Chinese (Mandarin)_Lyrical_Voice" style="margin-bottom: 8px;">
+    
+    <div class="together-slider">
+        <span>语速 (Speed)</span>
+        <input type="range" id="tts-speed" min="0.5" max="2.0" step="0.1" value="1.0">
+        <span id="tts-speed-val">1.0</span>
+    </div>
+    
+    <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <input type="text" id="tts-test-text" class="together-input" placeholder="测试短语…" style="flex:1;">
+        <button id="tts-test-btn" class="together-btn together-btn-secondary" style="white-space: nowrap;">试听</button>
+    </div>
+    
+    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+        模型强制使用 <strong>speech-2.8-hd</strong>
+    </div>
+</div>
             <div class="together-group">
                 <label><i class="fas fa-user-astronaut"></i>  梦角 </label>
                 <textarea id="char-persona" class="together-input together-textarea" placeholder="梦角的性格、背景、喜好等..."></textarea>
@@ -34250,8 +34461,9 @@ if (document.readyState === 'loading') {
     
     // 数据状态
     let togetherData = {
-        aiSettings: { apiUrl: '', apiKey: '', temperature: 0.7, model: '' },
-        charPersona: '',
+         aiSettings: { apiUrl: '', apiKey: '', temperature: 0.7, model: '' },
+    ttsConfig: { apiKey: '', voiceId: 'Chinese (Mandarin)_Lyrical_Voice', speed: 1.0 },
+    charPersona: '',
         charMemories: '',
         userPersona: '',
         userMemories: '',
@@ -34294,6 +34506,12 @@ if (document.readyState === 'loading') {
         
         renderPresetsList();
         renderHistoryList();
+        if (togetherData.ttsConfig) {
+        document.getElementById('tts-api-key').value = togetherData.ttsConfig.apiKey || '';
+        document.getElementById('tts-voice-id').value = togetherData.ttsConfig.voiceId || 'Chinese (Mandarin)_Lyrical_Voice';
+        document.getElementById('tts-speed').value = togetherData.ttsConfig.speed || 1.0;
+        document.getElementById('tts-speed-val').textContent = togetherData.ttsConfig.speed || 1.0;
+    }
     }
     
     // 保存数据
@@ -34313,8 +34531,13 @@ if (document.readyState === 'loading') {
         togetherData.userPersona = document.getElementById('user-persona').value;
         togetherData.userMemories = document.getElementById('user-memories').value;
         
-        saveData();
-        showNotification('所有设定已保存 ✓', 'success');
+        // 同步 TTS 配置
+    togetherData.ttsConfig.apiKey = document.getElementById('tts-api-key').value.trim();
+    togetherData.ttsConfig.voiceId = document.getElementById('tts-voice-id').value.trim();
+    togetherData.ttsConfig.speed = parseFloat(document.getElementById('tts-speed').value);
+    
+    saveData();
+    showNotification('所有设定已保存 ✓', 'success');
     }
     
     // 渲染预设列表
@@ -34922,6 +35145,73 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         }
     }
     
+    // 清理文本（保留 MiniMax 支持的语气标签，但这里我们简单保留）
+function cleanTextForTTS(text) {
+    // 简单实现，可根据需要完善
+    return text.replace(/\s+/g, ' ').trim();
+}
+
+// 调用 MiniMax TTS API
+async function speakTtsText(text) {
+    const apiKey = togetherData.ttsConfig.apiKey.trim();
+    if (!apiKey) {
+        showNotification('请先填写 MiniMax API Key', 'warning');
+        return;
+    }
+
+    const voiceId = togetherData.ttsConfig.voiceId || 'Chinese (Mandarin)_Lyrical_Voice';
+    const speed = togetherData.ttsConfig.speed || 1.0;
+    const cleanedText = cleanTextForTTS(text);
+
+    showNotification('正在合成语音…', 'info', 2000);
+
+    try {
+        const requestBody = {
+            model: 'speech-2.8-hd',        // 强制模型
+            text: cleanedText,
+            stream: false,
+            voice_setting: {
+                voice_id: voiceId,
+                speed: speed,
+                vol: 1.0,
+                pitch: 0
+            },
+            audio_setting: {
+                sample_rate: 32000,
+                bitrate: 128000,
+                format: 'mp3',
+                channel: 2
+            },
+            pronunciation_dict: { tone: [] },
+            subtitle_enable: false
+        };
+
+        const resp = await fetch('https://api.minimaxi.com/v1/t2a_v2', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        const json = await resp.json();
+        const hex = json.data?.audio?.replace(/\s/g, '');
+        if (!hex) throw new Error('无音频数据');
+
+        const byteArray = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) byteArray[i / 2] = parseInt(hex.substr(i, 2), 16);
+        const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play().catch(e => showNotification('播放失败: ' + e.message, 'error'));
+        audio.onended = () => URL.revokeObjectURL(url);
+    } catch (error) {
+        showNotification('TTS合成失败: ' + error.message, 'error');
+    }
+}
     // 绑定事件
     function bindEvents() {
         tabs.forEach(tab => {
@@ -34948,6 +35238,22 @@ ${presets || '温馨自然，语言流畅，带有生活气息'}
         loadModelsBtn.style.width = '100%';
         loadModelsBtn.addEventListener('click', loadModels);
         document.querySelector('#together-settings .together-group:first-child').appendChild(loadModelsBtn);
+        const speedSlider = document.getElementById('tts-speed');
+    const speedVal = document.getElementById('tts-speed-val');
+    speedSlider.addEventListener('input', () => {
+        speedVal.textContent = speedSlider.value;
+        // 实时更新到 togetherData（不保存）
+        togetherData.ttsConfig.speed = parseFloat(speedSlider.value);
+    });
+    // 试听按钮
+    document.getElementById('tts-test-btn').addEventListener('click', () => {
+        const testText = document.getElementById('tts-test-text').value.trim();
+        if (!testText) {
+            showNotification('请输入测试短语', 'warning');
+            return;
+        }
+        speakTtsText(testText);
+    });
     }
     
     // 初始化
