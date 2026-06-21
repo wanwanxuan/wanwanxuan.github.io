@@ -40129,5 +40129,2377 @@ window.commentOnMoment = function(postId) {
     document.head.appendChild(style);
 })();
 </script>
+<!-- 快问快答样式 - 最高层级 -->
+<style>
+/* 快问快答浮动卡片 - z-index 99999 确保在最上层 */
+#quick-quiz-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99999 !important;  /* 最高层级 */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    animation: qqFadeIn 0.35s ease;
+}
+#quick-quiz-overlay.active {
+    display: flex;
+}
+@keyframes qqFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.quick-quiz-card {
+    background: var(--secondary-bg);
+    border-radius: 28px;
+    width: 92%;
+    max-width: 440px;
+    padding: 0;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+    animation: qqSlideUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+    position: relative;
+}
+@keyframes qqSlideUp {
+    from { opacity: 0; transform: translateY(40px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.quick-quiz-header {
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(var(--accent-color-rgb), 0.06);
+}
+.quick-quiz-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.quick-quiz-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.quick-quiz-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.quick-quiz-avatar i {
+    font-size: 16px;
+    color: #fff;
+}
+.quick-quiz-sender {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.quick-quiz-badge {
+    font-size: 10px;
+    padding: 2px 12px;
+    border-radius: 20px;
+    background: rgba(var(--accent-color-rgb), 0.15);
+    color: var(--accent-color);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.quick-quiz-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.06);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.quick-quiz-close:hover {
+    background: rgba(255,71,87,0.12);
+    color: #ff4757;
+}
+
+.quick-quiz-body {
+    padding: 20px 20px 16px;
+}
+.quick-quiz-question {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.7;
+    margin-bottom: 4px;
+}
+.quick-quiz-question-type {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 12px;
+    border-radius: 20px;
+    background: var(--border-color);
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+.quick-quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+.quick-quiz-option {
+    padding: 13px 18px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-color);
+    background: var(--primary-bg);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    color: var(--text-primary);
+    text-align: left;
+    font-family: var(--font-family);
+    position: relative;
+}
+.quick-quiz-option:hover {
+    border-color: var(--accent-color);
+    background: rgba(var(--accent-color-rgb), 0.06);
+    transform: translateX(4px);
+}
+.quick-quiz-option:active {
+    transform: scale(0.97);
+}
+.quick-quiz-option.selected {
+    border-color: var(--accent-color);
+    background: rgba(var(--accent-color-rgb), 0.12);
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.08);
+}
+.quick-quiz-option.selected::after {
+    content: '✓';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: 16px;
+}
+.quick-quiz-input-wrap {
+    margin-top: 10px;
+}
+.quick-quiz-input {
+    width: 100%;
+    padding: 13px 18px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: var(--font-family);
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.quick-quiz-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.08);
+}
+.quick-quiz-input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.quick-quiz-timer-wrap {
+    margin: 16px 0 6px;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.quick-quiz-timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), rgba(var(--accent-color-rgb), 0.5));
+    border-radius: 4px;
+    transition: width 0.3s linear;
+    width: 100%;
+}
+.quick-quiz-timer-bar.danger {
+    background: linear-gradient(90deg, #ff4757, #ff6b6b);
+}
+
+.quick-quiz-footer {
+    padding: 12px 20px 20px;
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid var(--border-color);
+}
+.quick-quiz-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 14px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: all 0.2s;
+}
+.quick-quiz-btn-secondary {
+    background: var(--primary-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.quick-quiz-btn-secondary:hover {
+    background: var(--border-color);
+}
+.quick-quiz-btn-primary {
+    background: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(var(--accent-color-rgb), 0.35);
+}
+.quick-quiz-btn-primary:hover:not(:disabled) {
+    opacity: 0.88;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(var(--accent-color-rgb), 0.45);
+}
+.quick-quiz-btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 已作答 / 超时状态 */
+.quick-quiz-answered {
+    text-align: center;
+    padding: 10px 0 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+.quick-quiz-answered i {
+    color: #4cd964;
+    margin-right: 8px;
+}
+.quick-quiz-timeout {
+    text-align: center;
+    padding: 10px 0 4px;
+    font-size: 14px;
+    color: #ff4757;
+}
+.quick-quiz-timeout i {
+    margin-right: 8px;
+}
+
+/* 顶部安全区域适配 */
+@supports (padding: max(0px)) {
+    .quick-quiz-card {
+        margin-top: max(env(safe-area-inset-top, 0px), 0px);
+    }
+}
+</style>
+
+<!-- 快问快答卡片 -->
+<div id="quick-quiz-overlay">
+    <div class="quick-quiz-card" id="quick-quiz-card">
+        <div class="quick-quiz-header">
+            <div class="quick-quiz-header-left">
+                <div class="quick-quiz-avatar" id="qq-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span class="quick-quiz-sender" id="qq-sender">梦角</span>
+                <span class="quick-quiz-badge">快问快答</span>
+            </div>
+            <button class="quick-quiz-close" id="qq-close-btn" title="关闭">✕</button>
+        </div>
+        <div class="quick-quiz-body" id="qq-body">
+            <div class="quick-quiz-question-type" id="qq-type">选择题</div>
+            <div class="quick-quiz-question" id="qq-question">题目内容</div>
+            <div id="qq-options-container"></div>
+            <div id="qq-input-container" style="display:none;">
+                <div class="quick-quiz-input-wrap">
+                    <input class="quick-quiz-input" id="qq-input" placeholder="输入你的回答..." maxlength="200">
+                </div>
+            </div>
+            <div class="quick-quiz-timer-wrap">
+                <div class="quick-quiz-timer-bar" id="qq-timer-bar"></div>
+            </div>
+            <div id="qq-result-area"></div>
+        </div>
+        <div class="quick-quiz-footer" id="qq-footer">
+            <button class="quick-quiz-btn quick-quiz-btn-secondary" id="qq-skip-btn">跳过</button>
+            <button class="quick-quiz-btn quick-quiz-btn-primary" id="qq-submit-btn" disabled>提交</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ─── 题目数据 ──────────────────────────────
+    const QUIZ_QUESTIONS = [
+        // 选择题 (前25道)
+        { id: 1, type: 'choice', question: '牵手时，你喜欢十指相扣还是轻轻握住？', options: ['十指紧扣', '轻轻握住', '不喜欢牵手'] },
+        { id: 2, type: 'choice', question: '拥抱时，你喜欢从背后抱还是面对面紧抱？', options: ['从背后抱', '面对面紧抱', '不喜欢拥抱'] },
+        { id: 3, type: 'choice', question: '亲吻时，你喜欢轻吻还是深吻？', options: ['轻吻', '深吻', '不喜欢亲吻'] },
+        { id: 4, type: 'choice', question: '对视时，你会先笑还是先移开目光？', options: ['先笑', '先移开目光', '不会对视'] },
+        { id: 5, type: 'choice', question: '睡觉时，你喜欢枕我手臂还是自己枕枕头？', options: ['枕你手臂', '自己枕枕头', '喜欢自己一个人睡一张床'] },
+        { id: 6, type: 'choice', question: '我靠近时，你本能是迎上来还是向后退？', options: ['迎上来', '向后退', '站着不动等你'] },
+        { id: 7, type: 'choice', question: '吵架时，你想先抱我还是先讲道理？', options: ['先抱你', '先讲道理', '不理你'] },
+        { id: 8, type: 'choice', question: '难过时，你需要我说话还是安静陪着？', options: ['需要你安慰我', '需要你安静陪着我', '需要我自己一个人安静呆着'] },
+        { id: 9, type: 'choice', question: '我为你准备惊喜时，你喜欢提前知道还是完全意外？', options: ['提前知道', '完全意外'] },
+        { id: 10, type: 'choice', question: '约会时，你更希望我精心计划还是随性而为？', options: ['精心计划', '随性而为'] },
+        { id: 11, type: 'choice', question: '表达爱时，你希望我更常说"我爱你"还是多用行动？', options: ['"我爱你"', '行动', '"我爱你"，以及行动'] },
+        { id: 12, type: 'choice', question: '想念时，你会立刻联系我还是先忍着？', options: ['立刻联系', '先忍着'] },
+        { id: 13, type: 'choice', question: '额头吻 vs 鼻尖吻', options: ['额头吻', '鼻尖吻'] },
+        { id: 14, type: 'choice', question: '早起共进早餐 vs 深夜一起吃宵夜', options: ['早起共进早餐', '深夜一起吃宵夜', '我全都要'] },
+        { id: 15, type: 'choice', question: '我为你做饭 vs 你为我做饭', options: ['我为你做饭', '你为我做饭'] },
+        { id: 16, type: 'choice', question: '你希望我：公开晒恩爱 vs 私下默默甜', options: ['公开晒恩爱', '私下默默甜'] },
+        { id: 17, type: 'choice', question: '纪念日大惊喜 vs 日常小浪漫', options: ['纪念日大惊喜', '日常小浪漫'] },
+        { id: 18, type: 'choice', question: '长途旅行冒险 vs 宅家温馨周末', options: ['长途旅行冒险', '宅家温馨周末'] },
+        { id: 19, type: 'choice', question: '你更希望我：聪明幽默 vs 温柔体贴', options: ['聪明幽默', '温柔体贴', '我全都要', '你现在这样就很好'] },
+        { id: 20, type: 'choice', question: '你希望我们：相似互补 vs 志趣相投', options: ['相似互补', '志趣相投'] },
+        { id: 21, type: 'choice', question: '我们的关系中，你更想要：被我需要的感觉 vs 被我崇拜的感觉', options: ['被你需要的感觉', '被你崇拜的感觉', '我全都要', '这两种感觉我都不需要'] },
+        { id: 22, type: 'choice', question: '热烈的初恋感 vs 默契的老夫老妻感', options: ['热烈的初恋感', '默契的老夫老妻感'] },
+        { id: 23, type: 'choice', question: '我为你改变缺点 vs 接纳我的全部', options: ['你为我改变缺点', '接纳你的全部'] },
+        { id: 24, type: 'choice', question: '我吃醋时，你觉得可爱还是麻烦？', options: ['可爱', '麻烦'] },
+        { id: 25, type: 'choice', question: '我粘人时，你享受还是觉得烦？', options: ['享受', '烦'] },
+        // 填空题 (26-71)
+        { id: 26, type: 'fill', question: '用一种颜色形容我们的爱情' },
+        { id: 27, type: 'fill', question: '用一种天气形容你此刻的心情' },
+        { id: 28, type: 'fill', question: '用一种食物形容我的性格' },
+        { id: 29, type: 'fill', question: '用一种动物形容你眼中的我' },
+        { id: 30, type: 'fill', question: '用一首歌名形容我们的关系' },
+        { id: 31, type: 'fill', question: '用一部电影名形容我们的未来' },
+        { id: 32, type: 'fill', question: '用一个地点形容我在你心里的位置' },
+        { id: 33, type: 'fill', question: '用一种味道形容想我的感觉' },
+        { id: 34, type: 'fill', question: '此刻，你幸福吗？' },
+        { id: 35, type: 'fill', question: '此刻，你想我吗？' },
+        { id: 36, type: 'fill', question: '可以写下我的名字吗？' },
+        { id: 37, type: 'fill', question: '你觉得，我们的感情，还缺点什么？' },
+        { id: 38, type: 'fill', question: '早餐，你吃的什么？' },
+        { id: 39, type: 'fill', question: '午餐，你吃的什么？' },
+        { id: 40, type: 'fill', question: '晚餐，你吃的什么？' },
+        { id: 41, type: 'fill', question: '我有让你感到安心吗？' },
+        { id: 42, type: 'fill', question: '我最近有做什么让你不开心吗？' },
+        { id: 43, type: 'fill', question: '你愿意和我一起培养共同爱好？如果愿意，你想培养什么爱好？' },
+        { id: 44, type: 'fill', question: '我有让你感受到爱意吗？' },
+        { id: 45, type: 'fill', question: '你会怎么和你的朋友们提起我？' },
+        { id: 46, type: 'fill', question: '我和朋友们介绍你是我的爱人，你会介意吗？' },
+        { id: 47, type: 'fill', question: '如果我有一天失忆了，你会怎么做？' },
+        { id: 48, type: 'fill', question: '你对我第一次心动的原因是什么？' },
+        { id: 49, type: 'fill', question: '最近一直在熬夜吗？' },
+        { id: 50, type: 'fill', question: '想听你夸夸我' },
+        { id: 51, type: 'fill', question: '最近有什么喜欢的东西吗？' },
+        { id: 52, type: 'fill', question: '最近有什么开心的事情吗？' },
+        { id: 53, type: 'fill', question: '我真的好爱你。' },
+        { id: 54, type: 'fill', question: '我真的好想你。' },
+        { id: 55, type: 'fill', question: '想和我一起去哪里？' },
+        { id: 56, type: 'fill', question: '如果有一天我突然出现在你的面前，你会害怕吗？' },
+        { id: 57, type: 'fill', question: '最近有什么不开心的事情吗？' },
+        { id: 58, type: 'fill', question: '可以感受到我的存在吗？' },
+        { id: 59, type: 'fill', question: '想和你贴近，想近一点，再近一点，直到契合。可以吗？' },
+        { id: 60, type: 'fill', question: '我不乖，你会怎么惩罚我？' },
+        { id: 61, type: 'fill', question: '评价一下我的今日穿搭？' },
+        { id: 62, type: 'fill', question: '你有动摇过对我的感情吗？' },
+        { id: 63, type: 'fill', question: '看到了一些东西立刻想到了你，是巧合，还是你给我的传讯？' },
+        { id: 64, type: 'fill', question: '你会不喜欢垂头丧气的我吗？' },
+        { id: 65, type: 'fill', question: '我最近有在好好护肤，你注意到了吗？' },
+        { id: 66, type: 'fill', question: '我唱歌好听吗？' },
+        { id: 67, type: 'fill', question: '你还喜欢我这张脸吗？' },
+        { id: 68, type: 'fill', question: '你喜欢我现在的身材吗？' },
+        { id: 69, type: 'fill', question: '有坏东西欺负我，你会帮我吗？' },
+        { id: 70, type: 'fill', question: '我为我们求了姻缘，是上上签，你会觉得我迷信吗？' },
+        { id: 71, type: 'fill', question: '你喜欢什么体位姿势？' }
+    ];
+
+    // ─── 状态 ──────────────────────────────
+    let currentQuiz = null;
+    let currentQuizId = null;
+    let timerInterval = null;
+    let timeLeft = 0;
+    let totalTime = 0;
+    let isAnswered = false;
+    let isTimeout = false;
+    let closeCallback = null;
+    let quizSchedulerTimer = null;
+    let isFirstTriggerDone = false;
+
+    const DAILY_QUIZ_KEY = 'quick_quiz_daily_record';
+
+    // ─── DOM 引用 ──────────────────────────
+    function getEl(id) {
+        const el = document.getElementById(id);
+        if (!el) console.warn('[快问快答] 元素未找到:', id);
+        return el;
+    }
+
+    // ─── 工具函数 ──────────────────────────
+    function getPartnerName() {
+        return (typeof settings !== 'undefined' && settings.partnerName) ? settings.partnerName : '梦角';
+    }
+
+    function getMyName() {
+        return (typeof settings !== 'undefined' && settings.myName) ? settings.myName : '我';
+    }
+
+    function getTodayStr() {
+        return new Date().toISOString().slice(0, 10);
+    }
+
+    function getDailyRecord() {
+        try {
+            const raw = localStorage.getItem(DAILY_QUIZ_KEY);
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (data.date === getTodayStr()) {
+                    return data.asked || [];
+                }
+            }
+        } catch(e) {}
+        return [];
+    }
+
+    function saveDailyRecord(askedIds) {
+        try {
+            localStorage.setItem(DAILY_QUIZ_KEY, JSON.stringify({
+                date: getTodayStr(),
+                asked: askedIds
+            }));
+        } catch(e) {}
+    }
+
+    function getAvailableQuestions() {
+        const asked = getDailyRecord();
+        return QUIZ_QUESTIONS.filter(q => !asked.includes(q.id));
+    }
+
+    function getRandomQuestion() {
+        const available = getAvailableQuestions();
+        if (available.length === 0) return null;
+        const idx = Math.floor(Math.random() * available.length);
+        return available[idx];
+    }
+
+    function hasReachedDailyLimit() {
+        const asked = getDailyRecord();
+        return asked.length >= 2;
+    }
+
+    function markQuestionAsked(questionId) {
+        const asked = getDailyRecord();
+        if (!asked.includes(questionId)) {
+            asked.push(questionId);
+            saveDailyRecord(asked);
+        }
+    }
+
+    // ─── 显示快问快答卡片 ──────────────────
+
+    function showQuiz(question, isFirstTrigger = false) {
+        if (!question) return;
+        if (currentQuiz) {
+            closeQuiz(true);
+        }
+
+        currentQuiz = question;
+        currentQuizId = question.id;
+        isAnswered = false;
+        isTimeout = false;
+
+        const overlay = document.getElementById('quick-quiz-overlay');
+        if (!overlay) return;
+
+        // 更新梦角头像
+        const avatarEl = document.getElementById('qq-avatar');
+        if (avatarEl) {
+            const partnerImg = document.querySelector('#partner-avatar img');
+            if (partnerImg) {
+                avatarEl.innerHTML = `<img src="${partnerImg.src}">`;
+            } else {
+                avatarEl.innerHTML = `<i class="fas fa-user"></i>`;
+            }
+        }
+
+        // 更新发送者名称
+        const senderEl = document.getElementById('qq-sender');
+        if (senderEl) senderEl.textContent = getPartnerName();
+
+        // 题目类型
+        const typeEl = document.getElementById('qq-type');
+        if (typeEl) {
+            typeEl.textContent = question.type === 'choice' ? '选择题' : '填空题';
+            typeEl.style.background = question.type === 'choice' 
+                ? 'rgba(var(--accent-color-rgb), 0.15)' 
+                : 'rgba(76, 217, 100, 0.15)';
+            typeEl.style.color = question.type === 'choice' 
+                ? 'var(--accent-color)' 
+ : '#4cd964';
+        }
+
+        // 题目内容
+        const questionEl = document.getElementById('qq-question');
+        if (questionEl) questionEl.textContent = question.question;
+
+        // 选项/输入区域
+        const optionsContainer = document.getElementById('qq-options-container');
+        const inputContainer = document.getElementById('qq-input-container');
+        const inputEl = document.getElementById('qq-input');
+
+        // 重置结果区域
+        const resultArea = document.getElementById('qq-result-area');
+        if (resultArea) resultArea.innerHTML = '';
+
+        if (question.type === 'choice') {
+            optionsContainer.style.display = 'flex';
+            inputContainer.style.display = 'none';
+            optionsContainer.innerHTML = question.options.map((opt, idx) => `
+                <button class="quick-quiz-option" data-index="${idx}">${opt}</button>
+            `).join('');
+
+            optionsContainer.querySelectorAll('.quick-quiz-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (isAnswered || isTimeout) return;
+                    optionsContainer.querySelectorAll('.quick-quiz-option').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('qq-submit-btn').disabled = false;
+                });
+            });
+        } else {
+            optionsContainer.style.display = 'none';
+            inputContainer.style.display = 'block';
+            if (inputEl) {
+                inputEl.value = '';
+                inputEl.disabled = false;
+                setTimeout(() => inputEl.focus(), 300);
+                inputEl.addEventListener('input', function() {
+                    if (isAnswered || isTimeout) return;
+                    document.getElementById('qq-submit-btn').disabled = !this.value.trim();
+                });
+            }
+        }
+
+        // 设置计时器
+        totalTime = question.type === 'choice' ? 7 : 60;
+        timeLeft = totalTime;
+        updateTimerBar();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerBar();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                handleTimeout();
+            }
+        }, 1000);
+
+        // 显示卡片
+        overlay.classList.add('active');
+
+        // 绑定按钮
+        const submitBtn = document.getElementById('qq-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.onclick = function() {
+            if (isAnswered || isTimeout) return;
+            handleSubmit();
+        };
+
+        const skipBtn = document.getElementById('qq-skip-btn');
+        skipBtn.onclick = function() {
+            closeQuiz(false);
+        };
+
+        const closeBtn = document.getElementById('qq-close-btn');
+        closeBtn.onclick = function() {
+            closeQuiz(false);
+        };
+
+        overlay.onclick = function(e) {
+            if (e.target === overlay) {
+                closeQuiz(false);
+            }
+        };
+
+        if (!isFirstTrigger) {
+            markQuestionAsked(question.id);
+        }
+
+        closeCallback = null;
+    }
+
+    // ─── 更新计时条 ──────────────────────────
+    function updateTimerBar() {
+        const bar = document.getElementById('qq-timer-bar');
+        if (!bar) return;
+        const pct = (timeLeft / totalTime) * 100;
+        bar.style.width = Math.max(0, pct) + '%';
+        bar.classList.toggle('danger', pct < 20);
+    }
+
+    // ─── 处理超时 ──────────────────────────
+    function handleTimeout() {
+        if (isAnswered || isTimeout) return;
+        isTimeout = true;
+
+        const resultArea = document.getElementById('qq-result-area');
+        if (resultArea) {
+            resultArea.innerHTML = `<div class="quick-quiz-timeout"><i class="fas fa-hourglass-end"></i> 时间到！未作答</div>`;
+        }
+
+        const inputEl = document.getElementById('qq-input');
+        if (inputEl) inputEl.disabled = true;
+        document.getElementById('qq-submit-btn').disabled = true;
+        document.querySelectorAll('.quick-quiz-option').forEach(b => b.style.pointerEvents = 'none');
+
+        setTimeout(() => closeQuiz(false), 3000);
+    }
+
+    // ─── 处理提交 ──────────────────────────
+    function handleSubmit() {
+        if (isAnswered || isTimeout) return;
+
+        let answer = '';
+        if (currentQuiz.type === 'choice') {
+            const selected = document.querySelector('.quick-quiz-option.selected');
+            if (!selected) {
+                showNotification('请选择一个选项', 'warning');
+                return;
+            }
+            answer = selected.textContent.trim();
+        } else {
+            const inputEl = document.getElementById('qq-input');
+            if (!inputEl || !inputEl.value.trim()) {
+                showNotification('请输入你的回答', 'warning');
+                return;
+            }
+            answer = inputEl.value.trim();
+        }
+
+        isAnswered = true;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        document.querySelectorAll('.quick-quiz-option').forEach(b => b.style.pointerEvents = 'none');
+        const inputEl = document.getElementById('qq-input');
+        if (inputEl) inputEl.disabled = true;
+        document.getElementById('qq-submit-btn').disabled = true;
+
+        const resultArea = document.getElementById('qq-result-area');
+        if (resultArea) {
+            resultArea.innerHTML = `<div class="quick-quiz-answered"><i class="fas fa-check-circle"></i> 已作答</div>`;
+        }
+
+        // 发送回答到聊天
+        const senderName = getMyName();
+        const partnerName = getPartnerName();
+        const questionText = currentQuiz.question;
+        const typeLabel = currentQuiz.type === 'choice' ? '选择题' : '填空题';
+
+        const messageText = `【快问快答 · ${typeLabel}】\n${partnerName} 问：${questionText}\n\n${senderName} 答：${answer}`;
+
+        if (typeof addMessage === 'function') {
+            addMessage({
+                id: Date.now() + Math.random(),
+                sender: 'user',
+                text: messageText,
+                timestamp: new Date(),
+                status: 'sent',
+                type: 'normal',
+                favorited: false,
+                note: null
+            });
+            if (typeof playSound === 'function') playSound('send');
+        } else if (typeof messages !== 'undefined') {
+            messages.push({
+                id: Date.now() + Math.random(),
+                sender: 'user',
+                text: messageText,
+                timestamp: new Date(),
+                status: 'sent',
+                type: 'normal',
+                favorited: false,
+                note: null
+            });
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+            if (typeof renderMessages === 'function') renderMessages(false);
+        }
+
+        setTimeout(() => closeQuiz(false), 2000);
+    }
+
+    // ─── 关闭卡片 ──────────────────────────
+    function closeQuiz(silent = false) {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        const overlay = document.getElementById('quick-quiz-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            overlay.onclick = null;
+        }
+        currentQuiz = null;
+        currentQuizId = null;
+        isAnswered = false;
+        isTimeout = false;
+        if (closeCallback) {
+            const cb = closeCallback;
+            closeCallback = null;
+            cb();
+        }
+    }
+
+    // ─── 调度系统 ──────────────────────────
+
+    function scheduleNextQuiz(isFirstTrigger = false) {
+        if (quizSchedulerTimer) {
+            clearTimeout(quizSchedulerTimer);
+            quizSchedulerTimer = null;
+        }
+
+        if (!isFirstTrigger && hasReachedDailyLimit()) {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            const msToMidnight = tomorrow - now;
+            quizSchedulerTimer = setTimeout(() => {
+                saveDailyRecord([]);
+                scheduleNextQuiz(false);
+            }, msToMidnight + 1000);
+            return;
+        }
+
+        const available = getAvailableQuestions();
+        if (available.length === 0) {
+            saveDailyRecord([]);
+            const delay = 30 * 60 * 1000 + Math.random() * 60 * 60 * 1000;
+            quizSchedulerTimer = setTimeout(() => {
+                scheduleNextQuiz(false);
+            }, delay);
+            return;
+        }
+
+        const question = available[Math.floor(Math.random() * available.length)];
+        if (!question) return;
+
+        let delay;
+        if (isFirstTrigger) {
+            delay = 60 * 1000 + Math.random() * 14 * 60 * 1000;
+        } else {
+            const hours = 2 + Math.random() * 10;
+            delay = hours * 60 * 60 * 1000;
+        }
+
+        quizSchedulerTimer = setTimeout(() => {
+            if (!isFirstTrigger && hasReachedDailyLimit()) {
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                const msToMidnight = tomorrow - now;
+                quizSchedulerTimer = setTimeout(() => {
+                    saveDailyRecord([]);
+                    scheduleNextQuiz(false);
+                }, msToMidnight + 1000);
+                return;
+            }
+
+            const freshAvailable = getAvailableQuestions();
+            if (freshAvailable.length === 0) {
+                saveDailyRecord([]);
+                const nextDelay = 30 * 60 * 1000 + Math.random() * 60 * 60 * 1000;
+                quizSchedulerTimer = setTimeout(() => {
+                    scheduleNextQuiz(false);
+                }, nextDelay);
+                return;
+            }
+
+            const freshQuestion = freshAvailable[Math.floor(Math.random() * freshAvailable.length)];
+            if (freshQuestion) {
+                if (isFirstTrigger) {
+                    isFirstTriggerDone = true;
+                    markQuestionAsked(freshQuestion.id);
+                    showQuiz(freshQuestion, true);
+                    scheduleNextQuiz(false);
+                } else {
+                    showQuiz(freshQuestion, false);
+                    scheduleNextQuiz(false);
+                }
+            }
+        }, delay);
+    }
+
+    // ─── 启动系统 ──────────────────────────
+
+    function startQuickQuizSystem() {
+        const today = getTodayStr();
+        try {
+            const raw = localStorage.getItem(DAILY_QUIZ_KEY);
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (data.date !== today) {
+                    saveDailyRecord([]);
+                }
+            } else {
+                saveDailyRecord([]);
+            }
+        } catch(e) {
+            saveDailyRecord([]);
+        }
+
+        // 首次触发：页面打开后15分钟内弹出
+const firstDelay = 60 * 1000 + Math.random() * 14 * 60 * 1000; // 1-15分钟
+        setTimeout(() => {
+            const available = getAvailableQuestions();
+            if (available.length > 0) {
+                const question = available[Math.floor(Math.random() * available.length)];
+                if (question) {
+                    showQuiz(question, true);
+                    isFirstTriggerDone = true;
+                    markQuestionAsked(question.id);
+                    scheduleNextQuiz(false);
+                } else {
+                    scheduleNextQuiz(false);
+                }
+            } else {
+                saveDailyRecord([]);
+                scheduleNextQuiz(false);
+            }
+        }, firstDelay);
+
+        // 跨天重置检测（每30分钟）
+        setInterval(() => {
+            const currentToday = getTodayStr();
+            try {
+                const raw = localStorage.getItem(DAILY_QUIZ_KEY);
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (data.date !== currentToday) {
+                        saveDailyRecord([]);
+                        if (quizSchedulerTimer) {
+                            clearTimeout(quizSchedulerTimer);
+                            quizSchedulerTimer = null;
+                        }
+                        scheduleNextQuiz(false);
+                    }
+                }
+            } catch(e) {}
+        }, 30 * 60 * 1000);
+    }
+
+    // ─── 暴露全局 ──────────────────────────
+
+    window.quickQuiz = {
+        showQuiz,
+        closeQuiz,
+        getAvailableQuestions,
+        getDailyRecord,
+        markQuestionAsked,
+        startQuickQuizSystem
+    };
+
+    // ─── 初始化 ──────────────────────────
+
+    function init() {
+        const overlay = document.getElementById('quick-quiz-overlay');
+        if (!overlay) {
+            console.warn('[快问快答] 未找到 #quick-quiz-overlay');
+            return;
+        }
+
+        setTimeout(() => {
+            startQuickQuizSystem();
+        }, 2000);
+
+        console.log('[快问快答] 系统已启动 (z-index: 99999)');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        setTimeout(init, 1500);
+    }
+
+})();
+</script>
+<!-- ==================== 旅程功能样式 ==================== -->
+<style>
+#journey-modal .modal-content {
+    max-width: 600px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    overflow: hidden;
+}
+.journey-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    flex-shrink: 0;
+}
+.journey-header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.journey-tabs {
+    display: flex;
+    background: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.journey-tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+.journey-tab.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    font-weight: 600;
+}
+.journey-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--primary-bg);
+}
+.journey-plan-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.journey-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.journey-form-row.full {
+    grid-template-columns: 1fr;
+}
+.journey-form-row .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.journey-form-row label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+.journey-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--secondary-bg);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-family);
+    outline: none;
+}
+.journey-input:focus {
+    border-color: var(--accent-color);
+}
+.journey-passengers,
+.journey-seats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.journey-passenger-row,
+.journey-seat-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.journey-passenger-row input,
+.journey-seat-row input {
+    flex: 1;
+}
+.journey-passenger-row button,
+.journey-seat-row button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 6px;
+}
+.journey-passenger-row button:hover,
+.journey-seat-row button:hover {
+    color: #ff4757;
+}
+.journey-add-passenger,
+.journey-add-seat {
+    padding: 6px 12px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    width: 100%;
+}
+.journey-add-passenger:hover,
+.journey-add-seat:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+.journey-ticket-preview {
+    margin: 16px 0 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--secondary-bg);
+    position: relative;
+}
+.journey-ticket-bg {
+    width: 100%;
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    background-color: #eef2f5;
+    position: relative;
+}
+.journey-ticket-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.3);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #2c3e50;
+    padding: 16px;
+    text-align: center;
+}
+.journey-ticket-bg-overlay .route {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 24px;
+    font-weight: 700;
+}
+.journey-ticket-bg-overlay .route .arrow {
+    color: #bdc3c7;
+    font-size: 18px;
+}
+.journey-ticket-bg-overlay .meta {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.journey-ticket-bg-overlay .meta span {
+    background: rgba(255,255,255,0.6);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+.journey-ticket-bg-controls {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 4px;
+}
+.journey-ticket-bg-controls button {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--primary-bg);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-family);
+}
+.journey-ticket-bg-controls button:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+.journey-save-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: all 0.2s;
+}
+.journey-save-btn:hover {
+    opacity: 0.88;
+}
+.journey-plan-item {
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+}
+.journey-plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.journey-plan-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.journey-plan-actions {
+    display: flex;
+    gap: 6px;
+}
+.journey-plan-actions button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 6px;
+}
+.journey-plan-actions button:hover {
+    color: var(--accent-color);
+}
+.journey-plan-actions button.danger:hover {
+    color: #ff4757;
+}
+.journey-plan-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+}
+.journey-plan-detail span {
+    background: var(--primary-bg);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+.journey-plan-detail .passengers {
+    background: rgba(var(--accent-color-rgb), 0.08);
+    color: var(--accent-color);
+}
+.journey-plan-status {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.journey-plan-status .status-badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: var(--border-color);
+    color: var(--text-secondary);
+}
+.journey-plan-status .status-badge.done {
+    background: rgba(76, 217, 100, 0.15);
+    color: #4cd964;
+}
+.journey-plan-status .status-badge.pending {
+    background: rgba(255, 149, 0, 0.15);
+    color: #ff9500;
+}
+.journey-plan-status .status-badge.remind {
+    background: rgba(255, 71, 87, 0.12);
+    color: #ff4757;
+}
+.journey-plan-status .done-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.journey-plan-status .done-toggle input[type="checkbox"] {
+    accent-color: var(--accent-color);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+.journey-plan-media {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.journey-plan-media img {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+}
+.journey-plan-media .media-add {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    border: 1px dashed var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 20px;
+}
+.journey-plan-media .media-add:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+.journey-plan-note {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--primary-bg);
+    padding: 6px 10px;
+    border-radius: 6px;
+    word-break: break-all;
+}
+.journey-send-card {
+    margin-top: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    background: rgba(var(--accent-color-rgb), 0.06);
+    color: var(--accent-color);
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-family);
+}
+.journey-send-card:hover {
+    background: rgba(var(--accent-color-rgb), 0.12);
+}
+.journey-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+.journey-empty i {
+    font-size: 36px;
+    opacity: 0.2;
+    margin-bottom: 10px;
+    display: block;
+}
+.journey-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 14px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color);
+}
+.journey-itinerary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin: 4px 0;
+    background: var(--primary-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.journey-itinerary-item input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    font-family: var(--font-family);
+}
+.journey-itinerary-item button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 6px;
+}
+.journey-itinerary-item button:hover {
+    color: #ff4757;
+}
+</style>
+
+<!-- ==================== 旅程模态框 ==================== -->
+<div class="modal" id="journey-modal">
+    <div class="modal-content">
+        <div class="journey-header">
+            <div class="journey-header-title">
+                <i class="fas fa-plane-departure" style="color: var(--accent-color);"></i>
+                <span>旅程</span>
+            </div>
+            <button class="delivery-back-btn" id="journey-close" style="width:30px;height:30px;"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="journey-tabs" id="journey-tabs">
+            <div class="journey-tab active" data-tab="plan">计划</div>
+            <div class="journey-tab" data-tab="history">历史</div>
+        </div>
+        <div class="journey-content" id="journey-content"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // 存储键
+    const JOURNEY_KEY = 'journey_data_v1';
+
+    // 数据结构
+    let journeyData = {
+        plans: [],
+        history: []
+    };
+
+    // 当前编辑的计划
+    let currentPlan = {
+        origin: '',
+        destination: '',
+        passengers: [''],
+        flight: '',
+        date: '',
+        gate: '',
+        boardingTime: '',
+        class: '',
+        seats: [],
+        itinerary: [],
+        bgImage: null
+    };
+    let editingPlanId = null;
+
+    // ==================== 数据操作 ====================
+    function loadJourneyData() {
+        try {
+            const saved = localStorage.getItem(JOURNEY_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                journeyData = {
+                    plans: Array.isArray(parsed.plans) ? parsed.plans : [],
+                    history: Array.isArray(parsed.history) ? parsed.history : []
+                };
+                // 确保旧数据兼容
+                journeyData.plans.forEach(plan => {
+                    if (!plan.itinerary) plan.itinerary = [];
+                    if (!plan.seats) plan.seats = [];
+                });
+                journeyData.history.forEach(entry => {
+                    if (!entry.itinerary) entry.itinerary = [];
+                    if (!entry.seats) entry.seats = [];
+                    if (!entry.items) entry.items = [];
+                });
+            }
+        } catch(e) {
+            console.error('加载旅程数据失败', e);
+            journeyData = { plans: [], history: [] };
+        }
+    }
+
+    function saveJourneyData() {
+        try {
+            localStorage.setItem(JOURNEY_KEY, JSON.stringify(journeyData));
+        } catch(e) {
+            console.error('保存旅程数据失败', e);
+        }
+    }
+
+    // ==================== 工具函数 ====================
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    function formatTime(timeStr) {
+        if (!timeStr) return '';
+        const parts = timeStr.split(':');
+        if (parts.length === 2) {
+            return parts[0] + ':' + parts[1];
+        }
+        return timeStr;
+    }
+
+    function generateId() {
+        return 'journey_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    }
+
+    function showNotification(msg, type) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(msg, type);
+        } else if (typeof window.showNotification === 'function') {
+            window.showNotification(msg, type);
+        } else {
+            console.log('[' + type + '] ' + msg);
+        }
+    }
+
+    // 构建机票卡片HTML
+    function buildTicketCardHtml(plan) {
+        const passengers = (plan.passengers && plan.passengers.length > 0)
+            ? plan.passengers.join(' & ')
+            : '旅客';
+        const seats = (plan.seats && plan.seats.length > 0)
+            ? plan.seats.join(', ')
+            : '--';
+        const bgStyle = plan.bgImage
+            ? `background-image: url(${plan.bgImage}); background-size: cover; background-position: center;`
+            : 'background: linear-gradient(135deg, #eef2f5, #d5dbe3);';
+
+        return `
+        <div class="xhs-share-card" style="max-width: 320px; overflow: hidden; border-radius: 16px; background: #fff;">
+            <div style="padding: 12px 16px 8px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: #2c3e50; letter-spacing: 1px;">FANDOM AIRLINES</span>
+                    <span style="font-size: 11px; color: #888; border: 1px solid #ccc; padding: 2px 10px; border-radius: 12px;">${escapeHtml(plan.class || '头等舱')}</span>
+                </div>
+            </div>
+            <div style="padding: 16px; ${bgStyle} min-height: 160px; position: relative;">
+                <div style="background: rgba(255,255,255,0.75); backdrop-filter: blur(4px); padding: 14px; border-radius: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: #1a1a1a;">${escapeHtml(plan.origin || '?')}</div>
+                            <div style="font-size: 11px; color: #7f8c8d;">出发</div>
+                        </div>
+                        <div style="color: #bdc3c7; font-size: 20px;">
+                            <i class="fas fa-plane" style="transform: rotate(45deg);"></i>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 28px; font-weight: 700; color: #1a1a1a;">${escapeHtml(plan.destination || '?')}</div>
+                            <div style="font-size: 11px; color: #7f8c8d;">到达</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px; color: #555;">
+                        <div><span style="color: #95a5a6;">航班</span> ${escapeHtml(plan.flight || '--')}</div>
+                        <div><span style="color: #95a5a6;">日期</span> ${formatDate(plan.date) || '--'}</div>
+                        <div><span style="color: #95a5a6;">登机口</span> ${escapeHtml(plan.gate || '--')}</div>
+                        <div><span style="color: #95a5a6;">登机</span> ${formatTime(plan.boardingTime) || '--'}</div>
+                        <div style="grid-column: span 2;"><span style="color: #95a5a6;">旅客</span> ${escapeHtml(passengers)}</div>
+                        <div style="grid-column: span 2;"><span style="color: #95a5a6;">座位</span> ${escapeHtml(seats)}</div>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 8px 16px; border-top: 1px dashed #dcdde1; text-align: center; font-size: 10px; color: #aaa; letter-spacing: 2px;">
+                ${escapeHtml(plan.flight || 'CP')} · ${formatDate(plan.date) || ''}
+            </div>
+        </div>`;
+    }
+
+    // ==================== 计划界面渲染 ====================
+    function renderPlanView() {
+        const container = document.getElementById('journey-content');
+        if (!container) return;
+
+        const p = currentPlan;
+
+        // 确保数据一致
+        if (!p.seats || !Array.isArray(p.seats)) p.seats = [];
+        while (p.seats.length < p.passengers.length) {
+            p.seats.push('');
+        }
+        if (!p.itinerary || !Array.isArray(p.itinerary)) p.itinerary = [];
+
+        const passengersHtml = p.passengers.map((name, idx) => `
+            <div class="journey-passenger-row">
+                <input class="journey-input" type="text" value="${escapeHtml(name)}" placeholder="旅客姓名" data-passenger-idx="${idx}" onchange="window.updatePassenger(${idx}, this.value)">
+                ${p.passengers.length > 1 ? `<button onclick="window.removePassenger(${idx})"><i class="fas fa-times"></i></button>` : ''}
+            </div>
+        `).join('');
+
+        const seatsHtml = p.seats.map((seat, idx) => `
+            <div class="journey-seat-row">
+                <input class="journey-input" type="text" value="${escapeHtml(seat)}" placeholder="座位 ${idx+1}" data-seat-idx="${idx}" onchange="window.updateSeat(${idx}, this.value)">
+                ${p.seats.length > 1 ? `<button onclick="window.removeSeat(${idx})"><i class="fas fa-times"></i></button>` : ''}
+            </div>
+        `).join('');
+
+        const itineraryHtml = p.itinerary.map((item, idx) => `
+            <div class="journey-itinerary-item">
+                <i class="fas fa-map-marker-alt" style="color: var(--accent-color); font-size: 12px;"></i>
+                <input type="text" value="${escapeHtml(item)}" placeholder="旅行事项" data-itinerary-idx="${idx}" onchange="window.updateItinerary(${idx}, this.value)">
+                <button onclick="window.removeItineraryItem(${idx})"><i class="fas fa-times"></i></button>
+            </div>
+        `).join('');
+
+        const bgPreview = p.bgImage
+            ? `<div style="width:100%;height:120px;border-radius:8px;background-image:url(${p.bgImage});background-size:cover;background-position:center;border:1px solid var(--border-color);"></div>`
+            : `<div style="width:100%;height:120px;border-radius:8px;background:linear-gradient(135deg,#eef2f5,#d5dbe3);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:13px;">预览机票背景</div>`;
+
+        container.innerHTML = `
+            <div class="journey-plan-form">
+                <div class="journey-form-row full">
+                    <div class="form-group">
+                        <label>机票背景</label>
+                        <div class="journey-ticket-bg-controls" style="margin:0;">
+                            <button onclick="window.uploadBgImage()"><i class="fas fa-upload"></i> 上传图片</button>
+                            <button onclick="window.pasteBgUrl()"><i class="fas fa-link"></i> 图片链接</button>
+                            ${p.bgImage ? `<button onclick="window.removeBgImage()" style="color:#ff4757;"><i class="fas fa-trash"></i> 移除</button>` : ''}
+                        </div>
+                        <div style="margin-top:6px;">${bgPreview}</div>
+                    </div>
+                </div>
+                <div class="journey-form-row">
+                    <div class="form-group">
+                        <label>出发站</label>
+                        <input class="journey-input" id="journey-origin" value="${escapeHtml(p.origin)}" placeholder="如 北京">
+                    </div>
+                    <div class="form-group">
+                        <label>目的站</label>
+                        <input class="journey-input" id="journey-dest" value="${escapeHtml(p.destination)}" placeholder="如 罗马">
+                    </div>
+                </div>
+                <div class="journey-form-row">
+                    <div class="form-group">
+                        <label>旅客姓名 (一人及以上)</label>
+                        <div class="journey-passengers" id="journey-passengers-container">
+                            ${passengersHtml}
+                        </div>
+                        <div class="journey-add-passenger" onclick="window.addPassenger()" style="margin-top:6px;">
+                            <i class="fas fa-plus"></i> 添加旅客
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>座位 (对应旅客人数)</label>
+                        <div class="journey-seats" id="journey-seats-container">
+                            ${seatsHtml}
+                        </div>
+                        <div class="journey-add-seat" onclick="window.addSeat()" style="margin-top:6px;">
+                            <i class="fas fa-plus"></i> 添加座位
+                        </div>
+                    </div>
+                </div>
+                <div class="journey-form-row">
+                    <div class="form-group">
+                        <label>航班号</label>
+                        <input class="journey-input" id="journey-flight" value="${escapeHtml(p.flight)}" placeholder="如 CP-0520">
+                    </div>
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input class="journey-input" type="date" id="journey-date" value="${p.date || ''}">
+                    </div>
+                </div>
+                <div class="journey-form-row">
+                    <div class="form-group">
+                        <label>登机口</label>
+                        <input class="journey-input" id="journey-gate" value="${escapeHtml(p.gate)}" placeholder="如 13">
+                    </div>
+                    <div class="form-group">
+                        <label>登机时间</label>
+                        <input class="journey-input" type="time" id="journey-boarding" value="${p.boardingTime || ''}">
+                    </div>
+                </div>
+                <div class="journey-form-row full">
+                    <div class="form-group">
+                        <label>舱位</label>
+                        <input class="journey-input" id="journey-class" value="${escapeHtml(p.class)}" placeholder="如 头等舱">
+                    </div>
+                </div>
+
+                <div class="journey-section-title">
+                    <i class="fas fa-list-check"></i> 旅行计划
+                </div>
+                <div id="journey-itinerary-list">
+                    ${itineraryHtml}
+                </div>
+                <button class="journey-add-passenger" onclick="window.addItineraryItem()" style="margin-top:4px;">
+                    <i class="fas fa-plus"></i> 添加旅行计划事项
+                </button>
+
+                <button class="journey-save-btn" id="journey-save-plan" style="margin-top:8px;">
+                    <i class="fas fa-save"></i> ${editingPlanId ? '更新计划' : '保存计划'}
+                </button>
+            </div>
+            <div style="margin-top:20px;border-top:1px solid var(--border-color);padding-top:16px;">
+                <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">已保存的计划</div>
+                <div id="journey-saved-plans"></div>
+            </div>
+        `;
+
+        document.getElementById('journey-save-plan').addEventListener('click', function() {
+            savePlan();
+        });
+
+        renderSavedPlans();
+    }
+
+    function renderSavedPlans() {
+        const container = document.getElementById('journey-saved-plans');
+        if (!container) return;
+
+        const plans = journeyData.plans;
+        if (plans.length === 0) {
+            container.innerHTML = `<div class="journey-empty"><i class="fas fa-inbox"></i>暂无计划，创建你的第一个旅程吧</div>`;
+            return;
+        }
+
+        container.innerHTML = plans.map(plan => {
+            const itineraryCount = (plan.itinerary && plan.itinerary.length) ? plan.itinerary.length : 0;
+            return `
+            <div class="journey-plan-item">
+                <div class="journey-plan-header">
+                    <div class="journey-plan-title">${escapeHtml(plan.origin || '?')} <i class="fas fa-arrow-right" style="font-size:12px;"></i> ${escapeHtml(plan.destination || '?')}</div>
+                    <div class="journey-plan-actions">
+                        <button onclick="window.editPlan('${plan.id}')" title="编辑"><i class="fas fa-pen"></i></button>
+                        <button class="danger" onclick="window.deletePlan('${plan.id}')" title="删除"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+                <div class="journey-plan-detail">
+                    <span>${escapeHtml(plan.flight || '--')}</span>
+                    <span>${formatDate(plan.date) || '--'}</span>
+                    <span>登机口 ${escapeHtml(plan.gate || '--')}</span>
+                    <span>${formatTime(plan.boardingTime) || '--'}</span>
+                    <span class="passengers">${plan.passengers ? plan.passengers.join(', ') : '--'}</span>
+                </div>
+                ${itineraryCount > 0 ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;"><i class="fas fa-list-check"></i> ${itineraryCount} 个旅行事项</div>` : ''}
+                <div style="margin-top:8px;display:flex;gap:8px;">
+                    <button class="journey-send-card" onclick="window.sendPlanToChat('${plan.id}')">
+                        <i class="fas fa-paper-plane"></i> 发送机票
+                    </button>
+                    <button class="journey-send-card" style="background:rgba(var(--accent-color-rgb),0.12);" onclick="window.completePlan('${plan.id}')">
+                        <i class="fas fa-check"></i> 完成并移入历史
+                    </button>
+                </div>
+            </div>
+        `}).join('');
+    }
+
+    // ==================== 历史界面渲染 ====================
+    function renderHistoryView() {
+        const container = document.getElementById('journey-content');
+        if (!container) return;
+
+        const history = journeyData.history;
+        if (history.length === 0) {
+            container.innerHTML = `<div class="journey-empty"><i class="fas fa-history"></i>还没有历史记录，完成计划后会自动移入</div>`;
+            return;
+        }
+
+        container.innerHTML = history.map(entry => {
+            const plan = entry;
+            const items = entry.items || [];
+            const doneCount = items.filter(item => item.done).length;
+
+            return `
+            <div class="journey-plan-item" style="border-left:3px solid var(--accent-color);">
+                <div class="journey-plan-header">
+                    <div class="journey-plan-title">${escapeHtml(plan.origin || '?')} <i class="fas fa-arrow-right" style="font-size:12px;"></i> ${escapeHtml(plan.destination || '?')}</div>
+                    <div class="journey-plan-actions">
+                        <button onclick="window.sendHistoryPlanToChat('${entry.id}')" title="发送机票+计划"><i class="fas fa-paper-plane"></i></button>
+                        <button class="danger" onclick="window.deleteHistory('${entry.id}')" title="删除"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+                <div class="journey-plan-detail">
+                    <span>${escapeHtml(plan.flight || '--')}</span>
+                    <span>${formatDate(plan.date) || '--'}</span>
+                    <span>登机口 ${escapeHtml(plan.gate || '--')}</span>
+                    <span>${formatTime(plan.boardingTime) || '--'}</span>
+                    <span class="passengers">${plan.passengers ? plan.passengers.join(', ') : '--'}</span>
+                </div>
+                <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);">
+                    事项 ${doneCount}/${items.length} 已完成
+                </div>
+                <div style="margin-top:6px;">
+                    ${items.map((item, idx) => `
+                        <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(var(--accent-color-rgb),0.05);">
+                            <label class="done-toggle" style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
+                                <input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleHistoryItemDone('${entry.id}','${item.id}')">
+                            </label>
+                            <span style="font-size:13px;${item.done ? 'text-decoration:line-through;opacity:0.6;' : ''}">${escapeHtml(item.text || '事项')}</span>
+                            ${item.media && item.media.length > 0 ? item.media.map(url => `<img src="${escapeHtml(url)}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;cursor:pointer;" onclick="if(typeof viewImage==='function')viewImage('${escapeHtml(url.replace(/'/g,"\\'"))}')">`).join('') : ''}
+                            <button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px;padding:0 4px;" onclick="window.addHistoryItemMedia('${entry.id}','${item.id}')"><i class="fas fa-image"></i></button>
+                            <button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px;padding:0 4px;" onclick="window.addHistoryItemNote('${entry.id}','${item.id}')"><i class="fas fa-pen"></i></button>
+                            ${item.note ? `<span style="font-size:11px;color:var(--text-secondary);background:var(--primary-bg);padding:2px 8px;border-radius:4px;">${escapeHtml(item.note)}</span>` : ''}
+                        </div>
+                    `).join('')}
+                    <button class="journey-add-passenger" style="width:100%;margin-top:6px;" onclick="window.addHistoryItem('${entry.id}')">
+                        <i class="fas fa-plus"></i> 添加事项
+                    </button>
+                </div>
+                <div style="margin-top:8px;">
+                    <button class="journey-send-card" onclick="window.sendHistoryPlanToChat('${entry.id}')">
+                        <i class="fas fa-paper-plane"></i> 发送机票+计划
+                    </button>
+                </div>
+            </div>
+        `}).join('');
+    }
+
+    // ==================== 计划操作 ====================
+    function collectFormData() {
+        const origin = document.getElementById('journey-origin')?.value.trim() || '';
+        const destination = document.getElementById('journey-dest')?.value.trim() || '';
+        const flight = document.getElementById('journey-flight')?.value.trim() || '';
+        const date = document.getElementById('journey-date')?.value || '';
+        const gate = document.getElementById('journey-gate')?.value.trim() || '';
+        const boardingTime = document.getElementById('journey-boarding')?.value || '';
+        const classVal = document.getElementById('journey-class')?.value.trim() || '';
+
+        // 只从旅客专属容器收集旅客
+        const passengerContainer = document.getElementById('journey-passengers-container');
+        let passengers = [];
+        if (passengerContainer) {
+            const inputs = passengerContainer.querySelectorAll('.journey-passenger-row input');
+            passengers = Array.from(inputs).map(inp => inp.value.trim()).filter(n => n);
+        } else {
+            passengers = currentPlan.passengers.filter(n => n);
+        }
+
+        // 只从座位专属容器收集座位
+        const seatsContainer = document.getElementById('journey-seats-container');
+        let seats = [];
+        if (seatsContainer) {
+            const inputs = seatsContainer.querySelectorAll('.journey-seat-row input');
+            seats = Array.from(inputs).map(inp => inp.value.trim()).filter(s => s);
+        } else {
+            seats = currentPlan.seats.filter(s => s);
+        }
+
+        // 收集旅行事项
+        const itineraryContainer = document.getElementById('journey-itinerary-list');
+        let itinerary = [];
+        if (itineraryContainer) {
+            const inputs = itineraryContainer.querySelectorAll('.journey-itinerary-item input');
+            itinerary = Array.from(inputs).map(inp => inp.value.trim()).filter(t => t);
+        } else {
+            itinerary = currentPlan.itinerary.filter(t => t);
+        }
+
+        return { origin, destination, passengers, flight, date, gate, boardingTime, class: classVal, seats, itinerary };
+    }
+
+    function savePlan() {
+        const data = collectFormData();
+        if (!data.origin || !data.destination) {
+            showNotification('请填写出发站和目的站', 'warning');
+            return;
+        }
+        if (data.passengers.length === 0) {
+            showNotification('请至少填写一位旅客', 'warning');
+            return;
+        }
+
+        // 更新 currentPlan
+        currentPlan.origin = data.origin;
+        currentPlan.destination = data.destination;
+        currentPlan.passengers = data.passengers;
+        currentPlan.flight = data.flight || 'CP-0520';
+        currentPlan.date = data.date;
+        currentPlan.gate = data.gate || '--';
+        currentPlan.boardingTime = data.boardingTime;
+        currentPlan.class = data.class || '头等舱';
+        currentPlan.seats = data.seats;
+        currentPlan.itinerary = data.itinerary;
+
+        const plan = {
+            id: editingPlanId || generateId(),
+            origin: currentPlan.origin,
+            destination: currentPlan.destination,
+            passengers: [...currentPlan.passengers],
+            flight: currentPlan.flight,
+            date: currentPlan.date,
+            gate: currentPlan.gate,
+            boardingTime: currentPlan.boardingTime,
+            class: currentPlan.class,
+            seats: [...currentPlan.seats],
+            itinerary: [...currentPlan.itinerary],
+            bgImage: currentPlan.bgImage || null,
+            createdAt: Date.now()
+        };
+
+        if (editingPlanId) {
+            const idx = journeyData.plans.findIndex(p => p.id === editingPlanId);
+            if (idx >= 0) {
+                journeyData.plans[idx] = plan;
+            }
+            editingPlanId = null;
+        } else {
+            journeyData.plans.push(plan);
+        }
+
+        saveJourneyData();
+
+        // 保存后清空表单但保留背景图
+        const bg = currentPlan.bgImage;
+        currentPlan = {
+            origin: '',
+            destination: '',
+            passengers: [''],
+            flight: '',
+            date: '',
+            gate: '',
+            boardingTime: '',
+            class: '',
+            seats: [],
+            itinerary: [],
+            bgImage: bg
+        };
+        editingPlanId = null;
+        renderPlanView();
+        showNotification('计划已保存', 'success');
+        checkReminders();
+    }
+
+    // ==================== 全局操作方法 ====================
+    // 旅客
+    window.addPassenger = function() {
+        currentPlan.passengers.push('');
+        if (!currentPlan.seats) currentPlan.seats = [];
+        currentPlan.seats.push('');
+        renderPlanView();
+    };
+
+    window.removePassenger = function(idx) {
+        if (currentPlan.passengers.length <= 1) {
+            showNotification('至少保留一位旅客', 'warning');
+            return;
+        }
+        currentPlan.passengers.splice(idx, 1);
+        if (currentPlan.seats && currentPlan.seats.length > idx) {
+            currentPlan.seats.splice(idx, 1);
+        }
+        renderPlanView();
+    };
+
+    window.updatePassenger = function(idx, val) {
+        if (currentPlan.passengers[idx] !== undefined) {
+            currentPlan.passengers[idx] = val;
+        }
+    };
+
+    // 座位
+    window.addSeat = function() {
+        if (!currentPlan.seats) currentPlan.seats = [];
+        currentPlan.seats.push('');
+        renderPlanView();
+    };
+
+    window.removeSeat = function(idx) {
+        if (!currentPlan.seats) currentPlan.seats = [];
+        if (currentPlan.seats.length > 1) {
+            currentPlan.seats.splice(idx, 1);
+        } else {
+            currentPlan.seats = [];
+        }
+        renderPlanView();
+    };
+
+    window.updateSeat = function(idx, val) {
+        if (!currentPlan.seats) currentPlan.seats = [];
+        if (currentPlan.seats[idx] !== undefined) {
+            currentPlan.seats[idx] = val;
+        } else {
+            while (currentPlan.seats.length <= idx) {
+                currentPlan.seats.push('');
+            }
+            currentPlan.seats[idx] = val;
+        }
+    };
+
+    // 旅行计划事项
+    window.addItineraryItem = function() {
+        if (!currentPlan.itinerary) currentPlan.itinerary = [];
+        currentPlan.itinerary.push('');
+        renderPlanView();
+    };
+
+    window.removeItineraryItem = function(idx) {
+        if (!currentPlan.itinerary) currentPlan.itinerary = [];
+        currentPlan.itinerary.splice(idx, 1);
+        renderPlanView();
+    };
+
+    window.updateItinerary = function(idx, val) {
+        if (!currentPlan.itinerary) currentPlan.itinerary = [];
+        if (currentPlan.itinerary[idx] !== undefined) {
+            currentPlan.itinerary[idx] = val;
+        }
+    };
+
+    // 背景图
+    window.uploadBgImage = function() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('图片不能超过5MB', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                currentPlan.bgImage = ev.target.result;
+                renderPlanView();
+                showNotification('背景已更新', 'success');
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    };
+
+    window.pasteBgUrl = function() {
+        const url = prompt('请输入图片链接：');
+        if (url && url.trim()) {
+            if (url.match(/^https?:\/\/.+/)) {
+                currentPlan.bgImage = url.trim();
+                renderPlanView();
+                showNotification('背景已更新', 'success');
+            } else {
+                showNotification('请输入有效的图片链接', 'error');
+            }
+        }
+    };
+
+    window.removeBgImage = function() {
+        currentPlan.bgImage = null;
+        renderPlanView();
+        showNotification('背景已移除', 'success');
+    };
+
+    window.editPlan = function(id) {
+        const plan = journeyData.plans.find(p => p.id === id);
+        if (!plan) return;
+        editingPlanId = id;
+        currentPlan = {
+            origin: plan.origin || '',
+            destination: plan.destination || '',
+            passengers: plan.passengers ? [...plan.passengers] : [''],
+            flight: plan.flight || '',
+            date: plan.date || '',
+            gate: plan.gate || '',
+            boardingTime: plan.boardingTime || '',
+            class: plan.class || '',
+            seats: plan.seats ? [...plan.seats] : [],
+            itinerary: plan.itinerary ? [...plan.itinerary] : [],
+            bgImage: plan.bgImage || null
+        };
+        // 确保数量匹配
+        while (currentPlan.seats.length < currentPlan.passengers.length) {
+            currentPlan.seats.push('');
+        }
+        renderPlanView();
+    };
+
+    window.deletePlan = function(id) {
+        if (!confirm('确定要删除这个计划吗？')) return;
+        journeyData.plans = journeyData.plans.filter(p => p.id !== id);
+        saveJourneyData();
+        renderPlanView();
+        showNotification('计划已删除', 'success');
+    };
+
+    window.sendPlanToChat = function(id) {
+        const plan = journeyData.plans.find(p => p.id === id);
+        if (!plan) return;
+        const cardHtml = buildTicketCardHtml(plan);
+        sendJourneyCard(cardHtml);
+        showNotification('机票已发送', 'success');
+    };
+
+    window.completePlan = function(id) {
+        const plan = journeyData.plans.find(p => p.id === id);
+        if (!plan) return;
+        if (!confirm(`将「${plan.origin} → ${plan.destination}」移入历史记录？`)) return;
+
+        // 创建历史条目
+        const items = [];
+        // 自动为每个旅客创建事项
+        if (plan.passengers) {
+            plan.passengers.forEach((passenger, idx) => {
+                items.push({
+                    id: 'item_' + Date.now() + '_' + idx,
+                    text: passenger + ' 登机',
+                    done: false,
+                    media: [],
+                    note: ''
+                });
+            });
+        }
+        // 添加旅行计划中的事项
+        if (plan.itinerary) {
+            plan.itinerary.forEach((item, idx) => {
+                items.push({
+                    id: 'item_' + Date.now() + '_itin_' + idx,
+                    text: item,
+                    done: false,
+                    media: [],
+                    note: ''
+                });
+            });
+        }
+
+        const historyEntry = {
+            id: generateId(),
+            origin: plan.origin,
+            destination: plan.destination,
+            passengers: plan.passengers,
+            flight: plan.flight,
+            date: plan.date,
+            gate: plan.gate,
+            boardingTime: plan.boardingTime,
+            class: plan.class,
+            seats: plan.seats,
+            itinerary: plan.itinerary,
+            bgImage: plan.bgImage,
+            sentAt: Date.now(),
+            items: items
+        };
+
+        journeyData.history.push(historyEntry);
+        journeyData.plans = journeyData.plans.filter(p => p.id !== id);
+        saveJourneyData();
+
+        const activeTab = document.querySelector('.journey-tab.active');
+        if (activeTab && activeTab.dataset.tab === 'plan') {
+            renderPlanView();
+        } else {
+            renderHistoryView();
+        }
+        showNotification('已移入历史', 'success');
+    };
+
+    // ==================== 历史操作 ====================
+    window.sendHistoryPlanToChat = function(id) {
+        const entry = journeyData.history.find(h => h.id === id);
+        if (!entry) return;
+        const ticketCard = buildTicketCardHtml(entry);
+        let itemsHtml = '';
+        if (entry.items && entry.items.length > 0) {
+            itemsHtml = entry.items.map(item => {
+                const status = item.done ? '<i class="fas fa-check-circle" style="color:#4cd964;"></i>' : '<i class="far fa-circle"></i>';
+                const note = item.note ? ` <span style="font-size:10px;color:var(--text-secondary);">(${escapeHtml(item.note)})</span>` : '';
+                return `${status} ${escapeHtml(item.text)}${note}`;
+            }).join('<br>');
+        }
+        const fullCard = `
+        ${ticketCard}
+        <div style="margin-top: 8px; padding: 12px; background: var(--primary-bg); border-radius: 10px; border-left: 3px solid var(--accent-color); max-width: 320px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+                <i class="fas fa-list-check"></i> 旅程计划
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.8;">${itemsHtml || '无事项'}</div>
+        </div>`;
+        sendJourneyCard(fullCard);
+        showNotification('已发送机票+计划', 'success');
+    };
+
+    window.deleteHistory = function(id) {
+        if (!confirm('确定要删除这条历史记录吗？')) return;
+        journeyData.history = journeyData.history.filter(h => h.id !== id);
+        saveJourneyData();
+        renderHistoryView();
+        showNotification('已删除', 'success');
+    };
+
+    window.toggleHistoryItemDone = function(historyId, itemId) {
+        const entry = journeyData.history.find(h => h.id === historyId);
+        if (!entry) return;
+        const item = entry.items.find(i => i.id === itemId);
+        if (!item) return;
+        item.done = !item.done;
+        saveJourneyData();
+        renderHistoryView();
+    };
+
+    window.addHistoryItem = function(historyId) {
+        const entry = journeyData.history.find(h => h.id === historyId);
+        if (!entry) return;
+        const text = prompt('输入新事项：');
+        if (text && text.trim()) {
+            entry.items.push({
+                id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                text: text.trim(),
+                done: false,
+                media: [],
+                note: ''
+            });
+            saveJourneyData();
+            renderHistoryView();
+            showNotification('事项已添加', 'success');
+        }
+    };
+
+    window.addHistoryItemMedia = function(historyId, itemId) {
+        const entry = journeyData.history.find(h => h.id === historyId);
+        if (!entry) return;
+        const item = entry.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const choice = confirm('点击"确定"上传本地图片，点击"取消"使用图片链接');
+        if (choice) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('图片不能超过5MB', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    if (!item.media) item.media = [];
+                    item.media.push(ev.target.result);
+                    saveJourneyData();
+                    renderHistoryView();
+                    showNotification('图片已添加', 'success');
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        } else {
+            const url = prompt('请输入图片链接：');
+            if (url && url.trim()) {
+                if (!item.media) item.media = [];
+                item.media.push(url.trim());
+                saveJourneyData();
+                renderHistoryView();
+                showNotification('图片已添加', 'success');
+            }
+        }
+    };
+
+    window.addHistoryItemNote = function(historyId, itemId) {
+        const entry = journeyData.history.find(h => h.id === historyId);
+        if (!entry) return;
+        const item = entry.items.find(i => i.id === itemId);
+        if (!item) return;
+        const note = prompt('输入备注：', item.note || '');
+        if (note !== null) {
+            item.note = note.trim();
+            saveJourneyData();
+            renderHistoryView();
+            showNotification('备注已保存', 'success');
+        }
+    };
+
+    // ==================== 发送卡片到聊天 ====================
+    function sendJourneyCard(html) {
+        if (typeof addMessage === 'function') {
+            addMessage({
+                id: Date.now() + Math.random(),
+                sender: 'user',
+                text: html,
+                timestamp: new Date(),
+                status: 'sent',
+                type: 'normal',
+                webEmbed: true
+            });
+            if (typeof playSound === 'function') playSound('send');
+        } else if (typeof messages !== 'undefined') {
+            messages.push({
+                id: Date.now() + Math.random(),
+                sender: 'user',
+                text: html,
+                timestamp: new Date(),
+                status: 'sent',
+                type: 'normal',
+                webEmbed: true
+            });
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+            if (typeof renderMessages === 'function') renderMessages(false);
+        }
+    }
+
+    // ==================== 提醒系统 ====================
+    function checkReminders() {
+        const now = Date.now();
+        const plans = journeyData.plans;
+        plans.forEach(plan => {
+            if (!plan.date || !plan.boardingTime) return;
+            try {
+                const dateTimeStr = plan.date + 'T' + plan.boardingTime + ':00';
+                const boardingMoment = new Date(dateTimeStr).getTime();
+                if (isNaN(boardingMoment)) return;
+                const diff = boardingMoment - now;
+                if (diff > 0 && diff <= 10800000) {
+                    if (!plan._reminded) {
+                        plan._reminded = true;
+                        saveJourneyData();
+                        const msg = `[旅程提醒] 前往 ${plan.destination} 的航班 ${plan.flight || ''} 将在 ${formatTime(plan.boardingTime)} 登机，请做好准备！`;
+                        if (typeof addMessage === 'function') {
+                            addMessage({
+                                id: Date.now() + Math.random(),
+                                sender: 'system',
+                                text: msg,
+                                timestamp: new Date(),
+                                type: 'system'
+                            });
+                        } else if (typeof messages !== 'undefined') {
+                            messages.push({
+                                id: Date.now() + Math.random(),
+                                sender: 'system',
+                                text: msg,
+                                timestamp: new Date(),
+                                type: 'system'
+                            });
+                            if (typeof throttledSaveData === 'function') throttledSaveData();
+                            if (typeof renderMessages === 'function') renderMessages(false);
+                        }
+                        showNotification('航班提醒已发送', 'info');
+                    }
+                }
+            } catch(e) {}
+        });
+    }
+
+    setInterval(checkReminders, 60000);
+
+    // ==================== 标签切换 ====================
+    function switchTab(tabId) {
+        document.querySelectorAll('.journey-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabId);
+        });
+        if (tabId === 'plan') {
+            editingPlanId = null;
+            const bg = currentPlan.bgImage;
+            currentPlan = {
+                origin: '',
+                destination: '',
+                passengers: [''],
+                flight: '',
+                date: '',
+                gate: '',
+                boardingTime: '',
+                class: '',
+                seats: [],
+                itinerary: [],
+                bgImage: bg
+            };
+            renderPlanView();
+        } else {
+            renderHistoryView();
+        }
+    }
+
+    // ==================== 初始化 ====================
+    function initJourney() {
+        loadJourneyData();
+
+        const entryBtn = document.createElement('div');
+        entryBtn.className = 'settings-item';
+        entryBtn.id = 'journey-function';
+        entryBtn.innerHTML = '<i class="fas fa-plane-departure"></i><span>旅程</span>';
+        entryBtn.addEventListener('click', function() {
+            if (DOMElements && DOMElements.advancedModal && DOMElements.advancedModal.modal) {
+                hideModal(DOMElements.advancedModal.modal);
+            }
+            loadJourneyData();
+            currentPlan = {
+                origin: '',
+                destination: '',
+                passengers: [''],
+                flight: '',
+                date: '',
+                gate: '',
+                boardingTime: '',
+                class: '',
+                seats: [],
+                itinerary: [],
+                bgImage: null
+            };
+            editingPlanId = null;
+            renderPlanView();
+            showModal(document.getElementById('journey-modal'));
+        });
+
+        const advancedModal = document.getElementById('advanced-modal');
+        const settingsList = advancedModal?.querySelector('.settings-item-list');
+        if (settingsList) {
+            settingsList.appendChild(entryBtn);
+        }
+
+        document.querySelectorAll('.journey-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                switchTab(this.dataset.tab);
+            });
+        });
+
+        document.getElementById('journey-close').addEventListener('click', function() {
+            hideModal(document.getElementById('journey-modal'));
+        });
+
+        renderPlanView();
+        setTimeout(checkReminders, 5000);
+    }
+
+    window.journey = {
+        loadJourneyData,
+        saveJourneyData,
+        renderPlanView,
+        renderHistoryView,
+        switchTab,
+        sendJourneyCard,
+        checkReminders
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initJourney);
+    } else {
+        setTimeout(initJourney, 800);
+    }
+
+})();
+</script>
 </body>
 </html>
