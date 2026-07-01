@@ -39536,16 +39536,26 @@ window.commentOnMoment = function(postId) {
         <script>
 (function() {
     /* ========================================
-       静室 · 复古机械打字机
+       静室 · 复古机械打字机 (拼音版)
        ======================================== */
+
+    // ─── 拼音数据 ──────────────────────────
+    const INITIALS = ['b','p','m','f','d','t','n','l','g','k','h','j','q','x','zh','ch','sh','r','z','c','s','y','w'];
+    const FINALS = ['a','o','e','i','u','v','ai','ei','ui','ao','ou','iu','ie','ve','er','an','en','in','un','vn','ang','eng','ing','ong','ia','iao','ian','iang','iong','ua','uo','uai','uan','uang','ueng'];
+    const PUNCTUATIONS = [',', '.', '!', '?'];
+    const SPECIAL_KEYS = [' ', '\n']; // 空格和回车
+
+    // 纯韵母拼音（零声母）
+    const ZERO_INITIAL_FINALS = ['a','o','e','ai','ei','ao','ou','an','en','ang','eng','er','yi','ya','ye','yao','you','yan','yin','yang','ying','yong','wu','wa','wo','wai','wei','wan','wen','wang','weng','yu','yue','yuan','yun'];
 
     // ─── 全局状态 ──────────────────────────
     const CHARACTERS = 'abcdefghijklmnopqrstuvwxyz,.!? ';
-    const MAX_LINE_CHARS = 38;           // 一行约38个字符触发自动换行
-    let paperChars = [];                 // 当前页面的字符数据 (row: [char array])
-    let cursorRow = 0, cursorCol = 0;    // 光标位置
+    const MAX_LINE_CHARS = 38;
+    let paperChars = [];
+    let cursorRow = 0, cursorCol = 0;
     let nightMode = false;
-    let automaticTimer = null;           // 自动输入定时器
+    let automaticTimer = null;
+    let keyElements = {}; // 存储键的 DOM 引用
 
     // ─── Web Audio 音效引擎 ─────────────────
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -39556,65 +39566,60 @@ window.commentOnMoment = function(postId) {
     }
 
     function playKeySound(isSpace) {
-    ensureAudioCtx();
-    const now = audioCtx.currentTime;
-    
-    if (isSpace) {
-        // 空格音效（保持不变）
-        const gain = audioCtx.createGain();
-        const osc = audioCtx.createOscillator();
-        const filter = audioCtx.createBiquadFilter();
-        gain.connect(audioCtx.destination);
-        osc.connect(filter);
-        filter.connect(gain);
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(50, now + 0.06);
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-        osc.start(now);
-        osc.stop(now + 0.08);
-    } else {
-        // ========== 新音效：低沉金属按键轴 ==========
-        // 撞击声
-        const osc1 = audioCtx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(120, now);
-        osc1.frequency.exponentialRampToValueAtTime(60, now + 0.06);
-        const gain1 = audioCtx.createGain();
-        gain1.gain.setValueAtTime(0.22, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-        osc1.connect(gain1);
-        gain1.connect(audioCtx.destination);
-        osc1.start(now);
-        osc1.stop(now + 0.08);
+        ensureAudioCtx();
+        const now = audioCtx.currentTime;
+        
+        if (isSpace) {
+            const gain = audioCtx.createGain();
+            const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            gain.connect(audioCtx.destination);
+            osc.connect(filter);
+            filter.connect(gain);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.06);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        } else {
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(120, now);
+            osc1.frequency.exponentialRampToValueAtTime(60, now + 0.06);
+            const gain1 = audioCtx.createGain();
+            gain1.gain.setValueAtTime(0.22, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.08);
 
-        // 金属共振噪声
-        const noise = audioCtx.createBufferSource();
-        const bufferSize = Math.floor(audioCtx.sampleRate * 0.06);
-        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const noiseData = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.4;
-        noise.buffer = noiseBuffer;
-        const filterN = audioCtx.createBiquadFilter();
-        filterN.type = 'lowpass';
-        filterN.frequency.setValueAtTime(800, now);
-        filterN.frequency.linearRampToValueAtTime(200, now + 0.05);
-        const gainN = audioCtx.createGain();
-        gainN.gain.setValueAtTime(0.12, now);
-        gainN.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-        noise.connect(filterN);
-        filterN.connect(gainN);
-        gainN.connect(audioCtx.destination);
-        noise.start(now);
-        noise.stop(now + 0.07);
+            const noise = audioCtx.createBufferSource();
+            const bufferSize = Math.floor(audioCtx.sampleRate * 0.06);
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const noiseData = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.4;
+            noise.buffer = noiseBuffer;
+            const filterN = audioCtx.createBiquadFilter();
+            filterN.type = 'lowpass';
+            filterN.frequency.setValueAtTime(800, now);
+            filterN.frequency.linearRampToValueAtTime(200, now + 0.05);
+            const gainN = audioCtx.createGain();
+            gainN.gain.setValueAtTime(0.12, now);
+            gainN.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+            noise.connect(filterN);
+            filterN.connect(gainN);
+            gainN.connect(audioCtx.destination);
+            noise.start(now);
+            noise.stop(now + 0.07);
+        }
     }
-}
 
     function playReturnSound() {
         ensureAudioCtx();
         const now = audioCtx.currentTime;
-        // 嗖声 (滑动)
         {
             const noise = audioCtx.createBufferSource();
             const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
@@ -39634,7 +39639,6 @@ window.commentOnMoment = function(postId) {
             noise.start(now);
             noise.stop(now + 0.12);
         }
-        // 撞击声 (咚)
         setTimeout(() => {
             const att = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
@@ -39650,11 +39654,51 @@ window.commentOnMoment = function(postId) {
         }, 110);
     }
 
+    // ─── 拼音生成函数 ──────────────────────
+    function generatePinyin() {
+        const rand = Math.random();
+        let pinyin = '';
+        
+        if (rand < 0.2) {
+            // 20% 概率生成纯韵母拼音（零声母）
+            pinyin = ZERO_INITIAL_FINALS[Math.floor(Math.random() * ZERO_INITIAL_FINALS.length)];
+        } else {
+            // 80% 概率生成标准声母+韵母拼音
+            const initial = INITIALS[Math.floor(Math.random() * INITIALS.length)];
+            const final = FINALS[Math.floor(Math.random() * FINALS.length)];
+            pinyin = initial + final;
+        }
+        
+        return pinyin;
+    }
+
+    function generateNextAction() {
+        const actionRand = Math.random();
+        let characters = [];
+        
+        if (actionRand < 0.6) {
+            // 60% 概率输出拼音
+            const pinyin = generatePinyin();
+            characters = pinyin.split('');
+        } else if (actionRand < 0.8) {
+            // 20% 概率输出标点符号
+            const punct = PUNCTUATIONS[Math.floor(Math.random() * PUNCTUATIONS.length)];
+            characters = [punct];
+        } else if (actionRand < 0.9) {
+            // 10% 概率输出空格
+            characters = [' '];
+        } else {
+            // 10% 概率输出回车
+            characters = ['\n'];
+        }
+        
+        return characters;
+    }
+
     // ─── 界面生成 ──────────────────────────
     function createStillRoom() {
         if (document.getElementById('still-room-overlay')) return;
 
-        // 注入字体
         const fontLink = document.createElement('style');
         fontLink.textContent = `
             @font-face {
@@ -39664,7 +39708,6 @@ window.commentOnMoment = function(postId) {
         `;
         document.head.appendChild(fontLink);
 
-        // 全屏遮罩
         const overlay = document.createElement('div');
         overlay.id = 'still-room-overlay';
         overlay.style.cssText = `
@@ -39674,7 +39717,6 @@ window.commentOnMoment = function(postId) {
             transition: filter 0.8s;
         `;
 
-        // 暗角/光照层
         const vignette = document.createElement('div');
         vignette.id = 'still-room-vignette';
         vignette.style.cssText = `
@@ -39684,7 +39726,6 @@ window.commentOnMoment = function(postId) {
         `;
         overlay.appendChild(vignette);
 
-        // 主容器 (桌面 + 打字机)
         const main = document.createElement('div');
         main.style.cssText = `
             position: relative; width: 90vw; max-width: 800px; height: 70vh;
@@ -39693,7 +39734,6 @@ window.commentOnMoment = function(postId) {
         `;
         overlay.appendChild(main);
 
-        // 木头纹理桌面 (偏下)
         const desk = document.createElement('div');
         desk.style.cssText = `
             width: 100%; height: 80%;
@@ -39703,7 +39743,6 @@ window.commentOnMoment = function(postId) {
             position: relative;
             display: flex; justify-content: center; align-items: flex-end;
         `;
-        // 木纹 pseudo
         const woodGrain = document.createElement('div');
         woodGrain.style.cssText = `
             position: absolute; inset: 0; border-radius: inherit;
@@ -39713,7 +39752,6 @@ window.commentOnMoment = function(postId) {
         `;
         desk.appendChild(woodGrain);
 
-        // 打字机机身 (放置于桌面之上)
         const typewriter = document.createElement('div');
         typewriter.id = 'typewriter-body';
         typewriter.style.cssText = `
@@ -39725,7 +39763,6 @@ window.commentOnMoment = function(postId) {
             display: flex; flex-direction: column;
         `;
 
-        // 碳纤维纹理 overlay
         const carbon = document.createElement('div');
         carbon.style.cssText = `
             position: absolute; inset: 0; border-radius: inherit; opacity: 0.25;
@@ -39737,7 +39774,6 @@ window.commentOnMoment = function(postId) {
         `;
         typewriter.appendChild(carbon);
 
-        // 滚轴区域 (纸张支架)
         const rollerSection = document.createElement('div');
         rollerSection.style.cssText = `
             position: relative; width: 100%; height: 45%;
@@ -39746,7 +39782,6 @@ window.commentOnMoment = function(postId) {
             overflow: hidden;
             box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
         `;
-        // 滚轴柱
         const roller = document.createElement('div');
         roller.style.cssText = `
             width: 92%; height: 16px; background: linear-gradient(to bottom, #b0b0b0, #888, #666);
@@ -39754,7 +39789,6 @@ window.commentOnMoment = function(postId) {
             box-shadow: 0 2px 6px rgba(0,0,0,0.5);
         `;
         rollerSection.appendChild(roller);
-        // 左右旋钮
         ['left','right'].forEach(side => {
             const knob = document.createElement('div');
             knob.style.cssText = `
@@ -39767,12 +39801,11 @@ window.commentOnMoment = function(postId) {
             rollerSection.appendChild(knob);
         });
 
-        // 纸张区域 (奶油色纸，可滚动)
         const paperWrap = document.createElement('div');
         paperWrap.id = 'paper-wrap';
         paperWrap.style.cssText = `
             position: absolute; top: 8%; left: 10%; width: 80%; height: 100%;
-            background: #faf3e0 url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100"25" height="100"25" filter="url(%23noise)" opacity="0.04"/%3E%3C/svg%3E') repeat;
+            background: #faf3e0 url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise)" opacity="0.04"/%3E%3C/svg%3E') repeat;
             border: 1px solid #ddd;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
             padding: 12px; box-sizing: border-box;
@@ -39788,7 +39821,6 @@ window.commentOnMoment = function(postId) {
 
         typewriter.appendChild(rollerSection);
 
-        // 键盘区域
         const keyboard = document.createElement('div');
         keyboard.id = 'typewriter-keyboard';
         keyboard.style.cssText = `
@@ -39798,14 +39830,13 @@ window.commentOnMoment = function(postId) {
             align-items: center; gap: 6px; padding: 12px;
         `;
 
-        // QWERTY 布局 (简单布局，省略部分)
         const keyRows = [
             'qwertyuiop',
             'asdfghjkl',
             'zxcvbnm',
-            ',.?!',        // 底部符号行
+            ',.?!',
         ];
-        const keyElements = {}; // 存储键的 DOM 引用
+        
         keyRows.forEach(row => {
             const rowDiv = document.createElement('div');
             rowDiv.style.cssText = 'display:flex; gap:5px; justify-content:center; width:100%;';
@@ -39830,7 +39861,6 @@ window.commentOnMoment = function(postId) {
                     e.preventDefault();
                     pressKey(ch, key);
                 });
-                // 触摸
                 key.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     pressKey(ch, key);
@@ -39841,7 +39871,6 @@ window.commentOnMoment = function(postId) {
             keyboard.appendChild(rowDiv);
         });
 
-        // 空格键 (大键)
         const spaceRow = document.createElement('div');
         spaceRow.style.cssText = 'display:flex; justify-content:center; width:100%; margin-top:4px;';
         const spaceKey = document.createElement('div');
@@ -39869,7 +39898,6 @@ window.commentOnMoment = function(postId) {
         spaceRow.appendChild(spaceKey);
         keyboard.appendChild(spaceRow);
 
-        // 回车键
         const returnKey = document.createElement('div');
         returnKey.className = 'typewriter-key';
         returnKey.style.cssText = `
@@ -39900,7 +39928,6 @@ window.commentOnMoment = function(postId) {
         desk.appendChild(typewriter);
         main.appendChild(desk);
 
-        // 夜间模式按钮 (右上角)
         const nightBtn = document.createElement('button');
         nightBtn.textContent = '🌙';
         nightBtn.style.cssText = `
@@ -39913,7 +39940,6 @@ window.commentOnMoment = function(postId) {
         nightBtn.addEventListener('click', toggleNightMode);
         overlay.appendChild(nightBtn);
 
-        // 退出按钮 (左上角)
         const exitBtn = document.createElement('button');
         exitBtn.innerHTML = '<i class="fas fa-times"></i>';
         exitBtn.style.cssText = `
@@ -39928,17 +39954,13 @@ window.commentOnMoment = function(postId) {
 
         document.body.appendChild(overlay);
 
-        // 初始化纸张状态
         initPaper();
-
-        // 启动自动输入
         startAutoType();
     }
 
     // ─── 键盘按下动画 ──────────────────────
     function pressKey(char, keyElement) {
         if (!keyElement) return;
-        // 视觉下沉
         keyElement.style.transform = 'translateY(3px)';
         keyElement.style.boxShadow = '0 1px 2px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.6)';
         keyElement.style.background = 'radial-gradient(circle at 40% 35%, #d0d0d0, #999)';
@@ -39948,7 +39970,6 @@ window.commentOnMoment = function(postId) {
             keyElement.style.background = 'radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa)';
         }, 80);
 
-        // 处理字符输入
         if (char === ' ') {
             typeCharacter(' ');
             playKeySound(true);
@@ -39981,16 +40002,13 @@ window.commentOnMoment = function(postId) {
     function handleReturn() {
         cursorRow++;
         cursorCol = 0;
-        // 检查纸张滚动
-        const maxVisibleRows = 12; // 约12行
+        const maxVisibleRows = 12;
         if (cursorRow >= maxVisibleRows) {
-            // 移除最早的行
             paperChars.shift();
             cursorRow--;
         }
         updatePaperDisplay();
         playReturnSound();
-        // 纸架向上移动效果
         const paper = document.getElementById('paper-wrap');
         if (paper) {
             paper.style.transform = 'translateY(-2px)';
@@ -40008,47 +40026,50 @@ window.commentOnMoment = function(postId) {
             for (let c = 0; c < row.length; c++) {
                 const ch = row[c];
                 if (ch === undefined) break;
-                // 墨水效果：随机旋转、偏移、不透明度
-                const rot = (Math.random() - 0.5) * 3; // ±1.5度
-                const xOff = (Math.random() - 0.5) * 0.8; // px
+                const rot = (Math.random() - 0.5) * 3;
+                const xOff = (Math.random() - 0.5) * 0.8;
                 const yOff = (Math.random() - 0.5) * 0.5;
                 const opacity = 0.75 + Math.random() * 0.25;
                 const style = `display:inline-block; transform:rotate(${rot}deg) translate(${xOff}px,${yOff}px); opacity:${opacity};`;
                 line += `<span style="${style}">${ch}</span>`;
             }
-            // 当前行之后显示光标
             if (r === cursorRow) {
                 line += '<span class="cursor-blink" style="display:inline-block; width:2px; height:1em; background:#333; animation: blink 1s step-end infinite; vertical-align:middle;"></span>';
             }
             html += `<div style="min-height:1.5em;">${line}</div>`;
         }
         paper.innerHTML = html;
-        // 始终滚动到底部
         paper.scrollTop = paper.scrollHeight;
     }
 
-   function startAutoType() {
-    clearInterval(automaticTimer);
-    automaticTimer = setInterval(() => {
-        const char = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
-        if (char === ' ') {
-            typeCharacter(' ');
-            playKeySound(true);
-            const keyEl = keyElements[' '];
-            if (keyEl) animateKey(keyEl);
-        } else if (char === '\n') {
-            handleReturn();
-            const keyEl = keyElements['\n'];
-            if (keyEl) animateKey(keyEl);
-        } else {
-            typeCharacter(char);
-            playKeySound(false);
-            const keyEl = keyElements[char];
-            if (keyEl) animateKey(keyEl);
-        }
-        // 不再调用 animateRandomKey
-    }, 1000 + Math.random() * 6000);
-}
+    // ─── 自动打字（拼音版） ─────────────────
+    function startAutoType() {
+        clearInterval(automaticTimer);
+        automaticTimer = setInterval(() => {
+            const characters = generateNextAction();
+            
+            // 逐个输出字符
+            characters.forEach((char, index) => {
+                setTimeout(() => {
+                    if (char === ' ') {
+                        typeCharacter(' ');
+                        playKeySound(true);
+                        const keyEl = keyElements[' '];
+                        if (keyEl) animateKey(keyEl);
+                    } else if (char === '\n') {
+                        handleReturn();
+                        const keyEl = keyElements['\n'];
+                        if (keyEl) animateKey(keyEl);
+                    } else {
+                        typeCharacter(char);
+                        playKeySound(false);
+                        const keyEl = keyElements[char.toLowerCase()];
+                        if (keyEl) animateKey(keyEl);
+                    }
+                }, index * 150); // 每个字符间隔150ms，模拟打字节奏
+            });
+        }, 2000 + Math.random() * 4000); // 每组拼音/符号间隔2-6秒
+    }
 
     function animateKey(el) {
         if (!el) return;
@@ -40061,20 +40082,12 @@ window.commentOnMoment = function(postId) {
             el.style.background = 'radial-gradient(circle at 40% 35%, #f0f0f0, #aaaaaa)';
         }, 80);
     }
-    function animateRandomKey() {
-        const keys = document.querySelectorAll('.typewriter-key:not([style*="width: 160px"]):not([style*="width: 70px"])');
-        if (keys.length > 0) {
-            const rnd = keys[Math.floor(Math.random() * keys.length)];
-            animateKey(rnd);
-        }
-    }
 
     // ─── 夜间模式 ──────────────────────────
     function toggleNightMode() {
         nightMode = !nightMode;
         const vignette = document.getElementById('still-room-vignette');
         if (nightMode) {
-            // 台灯效果：暖色聚光
             vignette.style.background = 'radial-gradient(ellipse at center, rgba(255,200,100,0.15) 10%, rgba(0,0,0,0.7) 70%)';
             document.getElementById('still-room-overlay').style.filter = 'brightness(0.7) sepia(0.2)';
         } else {
@@ -40108,7 +40121,6 @@ window.commentOnMoment = function(postId) {
         list.appendChild(entry);
     }
 
-    // 当 DOM 就绪且高级面板存在时注入入口
     function tryAddEntry() {
         addEntryToAdvanced();
     }
@@ -40118,7 +40130,6 @@ window.commentOnMoment = function(postId) {
         setTimeout(tryAddEntry, 1000);
     }
 
-    // 注入动画所需样式
     const style = document.createElement('style');
     style.textContent = `
         @keyframes blink {
@@ -42497,6 +42508,678 @@ const firstDelay = 60 * 1000 + Math.random() * 14 * 60 * 1000; // 1-15分钟
         document.addEventListener('DOMContentLoaded', initJourney);
     } else {
         setTimeout(initJourney, 800);
+    }
+
+})();
+</script>
+        <!-- 倾诉功能 - 修正版：文字精确居中于动画圆 -->
+<style>
+/* 倾诉界面样式 - 独立覆盖 */
+#confession-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Noto Serif SC', serif;
+}
+
+#confession-overlay.active {
+    display: flex;
+}
+
+/* 动画容器 - 尺寸固定 */
+.confession-scene {
+    position: relative;
+    width: 300px;
+    height: 400px;
+    margin: 0 auto;
+    flex-shrink: 0;
+}
+
+.confession-contrast {
+    filter: contrast(10) hue-rotate(0);
+    width: 300px;
+    height: 400px;
+    background-color: #000;
+    overflow: hidden;
+    animation: hueRotate 10s infinite linear;
+}
+
+/* ---- 核心动画圆 ---- */
+.confession-circle {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    box-sizing: border-box;
+    filter: blur(8px);
+    /* 圆位于场景上半部分，垂直居中在场景中 */
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.confession-circle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(0);
+    width: 200px;
+    height: 200px;
+    background-color: #00ff6f;
+    border-radius: 42% 38% 62% 49% / 45%;
+    animation: rotate 10s infinite linear;
+}
+
+.confession-circle::before {
+    content: "";
+    position: absolute;
+    width: 176px;
+    height: 176px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background-color: #000;
+    z-index: 10;
+}
+
+/* ---- 气泡 ---- */
+.confession-bubbles {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 100px;
+    height: 40px;
+    transform: translate(-50%, 0);
+    border-radius: 100px 100px 0 0;
+    background-color: #00ff6f;
+    filter: blur(5px);
+}
+
+.confession-bubbles li {
+    position: absolute;
+    border-radius: 50%;
+    background: #00ff6f;
+    list-style: none;
+}
+
+.confession-bubbles li:nth-child(1) { width: 18px; height: 18px; left: 20px; top: 50%; animation: moveToTop 6s ease-in-out -1.2s infinite; }
+.confession-bubbles li:nth-child(2) { width: 24px; height: 24px; left: 60px; top: 50%; animation: moveToTop 8s ease-in-out -2.5s infinite; }
+.confession-bubbles li:nth-child(3) { width: 14px; height: 14px; left: 80px; top: 50%; animation: moveToTop 5s ease-in-out -0.8s infinite; }
+.confession-bubbles li:nth-child(4) { width: 28px; height: 28px; left: 30px; top: 50%; animation: moveToTop 9s ease-in-out -3.2s infinite; }
+.confession-bubbles li:nth-child(5) { width: 20px; height: 20px; left: 70px; top: 50%; animation: moveToTop 7s ease-in-out -1.8s infinite; }
+.confession-bubbles li:nth-child(6) { width: 16px; height: 16px; left: 45px; top: 50%; animation: moveToTop 6.5s ease-in-out -2.0s infinite; }
+.confession-bubbles li:nth-child(7) { width: 22px; height: 22px; left: 55px; top: 50%; animation: moveToTop 8.5s ease-in-out -3.8s infinite; }
+.confession-bubbles li:nth-child(8) { width: 12px; height: 12px; left: 85px; top: 50%; animation: moveToTop 5.5s ease-in-out -1.0s infinite; }
+.confession-bubbles li:nth-child(9) { width: 26px; height: 26px; left: 25px; top: 50%; animation: moveToTop 7.5s ease-in-out -2.8s infinite; }
+.confession-bubbles li:nth-child(10) { width: 15px; height: 15px; left: 65px; top: 50%; animation: moveToTop 6.2s ease-in-out -1.5s infinite; }
+.confession-bubbles li:nth-child(11) { width: 30px; height: 30px; left: 40px; top: 50%; animation: moveToTop 9.5s ease-in-out -4.0s infinite; }
+.confession-bubbles li:nth-child(12) { width: 17px; height: 17px; left: 75px; top: 50%; animation: moveToTop 5.8s ease-in-out -0.5s infinite; }
+.confession-bubbles li:nth-child(13) { width: 21px; height: 21px; left: 50px; top: 50%; animation: moveToTop 7.2s ease-in-out -2.2s infinite; }
+.confession-bubbles li:nth-child(14) { width: 13px; height: 13px; left: 90px; top: 50%; animation: moveToTop 6.8s ease-in-out -1.1s infinite; }
+.confession-bubbles li:nth-child(15) { width: 19px; height: 19px; left: 35px; top: 50%; animation: moveToTop 8.2s ease-in-out -3.5s infinite; }
+
+@keyframes rotate {
+    50% { border-radius: 45% / 42% 38% 58% 49%; }
+    100% { transform: translate(-50%, -50%) rotate(720deg); }
+}
+
+@keyframes moveToTop {
+    90% { opacity: 1; }
+    100% { opacity: 0.1; transform: translate(-50%, -180px); }
+}
+
+@keyframes hueRotate {
+    100% { filter: contrast(15) hue-rotate(360deg); }
+}
+
+/* ---- ★ 文字精确定位在圆的中心 ---- */
+.confession-text-center {
+    position: absolute;
+    /* 圆的尺寸是300x300，位于场景垂直居中 */
+    /* 场景高度400px，圆top:50% translateY(-50%)，所以圆中心在场景的200px处 */
+    /* 圆本身是300px高，中心在150px处，加上top偏移后总中心 = 200px */
+    /* 因此文字容器放在场景正中央即可 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    width: 240px;
+    pointer-events: none;
+    text-align: center;
+}
+
+/* 状态提示文字（不消散） */
+.confession-state-text {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    transition: opacity 0.4s ease;
+    text-shadow: 0 0 20px rgba(0, 255, 111, 0.12);
+    line-height: 1.6;
+}
+
+/* 回复内容（烟雾消散）- 精确居中 */
+.confession-reply-text {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: 1px;
+    text-shadow: 0 0 30px rgba(0, 255, 111, 0.25);
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+.confession-reply-text.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.confession-reply-text.smoke {
+    animation: smokeDissolve 2.8s ease-out forwards;
+}
+
+@keyframes smokeDissolve {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+    20% { opacity: 1; transform: translate(-50%, -52%) scale(1.02); filter: blur(0); }
+    60% { opacity: 0.7; transform: translate(-50%, -62%) scale(1.08); filter: blur(6px); }
+    100% { opacity: 0; transform: translate(-50%, -80%) scale(1.18); filter: blur(16px); }
+}
+
+/* ---- 呼吸灯 ---- */
+.confession-breath {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid rgba(0, 255, 111, 0.6);
+    cursor: pointer;
+    margin-top: 20px;
+    z-index: 30;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(0, 255, 111, 0.2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00ff6f;
+    font-size: 24px;
+}
+
+.confession-breath::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 111, 0.2);
+    animation: breathPulse 2.5s ease-in-out infinite;
+}
+
+.confession-breath::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 111, 0.08);
+    animation: breathPulse 2.5s ease-in-out infinite 0.6s;
+}
+
+@keyframes breathPulse {
+    0% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.4; }
+}
+
+.confession-breath:hover {
+    transform: scale(1.05);
+    border-color: rgba(0, 255, 111, 0.9);
+    box-shadow: 0 0 40px rgba(0, 255, 111, 0.4);
+}
+
+.confession-breath.listening {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 50px rgba(255, 107, 107, 0.5);
+    animation: listeningPulse 0.8s ease-in-out infinite alternate;
+}
+
+.confession-breath.listening::before,
+.confession-breath.listening::after {
+    border-color: rgba(255, 107, 107, 0.3);
+}
+
+@keyframes listeningPulse {
+    0% { transform: scale(1); box-shadow: 0 0 30px rgba(255, 107, 107, 0.3); }
+    100% { transform: scale(1.08); box-shadow: 0 0 60px rgba(255, 107, 107, 0.6); }
+}
+
+.confession-breath i {
+    position: relative;
+    z-index: 2;
+}
+.confession-breath .fa-microphone { display: block; }
+.confession-breath .fa-stop { display: none; }
+.confession-breath.listening .fa-microphone { display: none; }
+.confession-breath.listening .fa-stop { display: block; }
+
+/* 状态提示（呼吸灯下方） */
+.confession-status {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-top: 10px;
+    transition: color 0.5s ease;
+    text-transform: uppercase;
+    font-weight: 300;
+}
+.confession-status.active { color: rgba(0, 255, 111, 0.7); }
+.confession-status.listening { color: #ff6b6b; }
+
+/* 退出按钮 */
+.confession-exit {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 99999;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+}
+.confession-exit:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+@media (max-width: 480px) {
+    .confession-scene { transform: scale(0.78); }
+    .confession-reply-text { font-size: 17px; }
+    .confession-state-text { font-size: 13px; }
+    .confession-breath { width: 50px; height: 50px; font-size: 20px; }
+    .confession-exit { top: 16px; right: 16px; width: 38px; height: 38px; font-size: 16px; }
+}
+</style>
+
+<!-- 倾诉功能 HTML -->
+<div id="confession-overlay">
+    <button class="confession-exit" id="confession-exit-btn">
+        <i class="fas fa-times"></i>
+    </button>
+
+    <div class="confession-scene">
+        <div class="confession-contrast">
+            <div class="confession-circle"></div>
+            <ul class="confession-bubbles">
+                <li></li><li></li><li></li><li></li><li></li>
+                <li></li><li></li><li></li><li></li><li></li>
+                <li></li><li></li><li></li><li></li><li></li>
+            </ul>
+        </div>
+
+        <!-- ★ 文字层：精确覆盖在动画圆的正中央 -->
+        <div class="confession-text-center">
+            <div class="confession-state-text" id="confession-state-text">静待诉说</div>
+            <div class="confession-reply-text" id="confession-reply-text"></div>
+        </div>
+    </div>
+
+    <button class="confession-breath" id="confession-breath-btn">
+        <i class="fas fa-microphone"></i>
+        <i class="fas fa-stop"></i>
+    </button>
+
+    <div class="confession-status" id="confession-status">点击呼吸灯开始倾诉</div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ---------- DOM ----------
+    const overlay = document.getElementById('confession-overlay');
+    const exitBtn = document.getElementById('confession-exit-btn');
+    const breathBtn = document.getElementById('confession-breath-btn');
+    const statusText = document.getElementById('confession-status');
+    const stateText = document.getElementById('confession-state-text');
+    const replyText = document.getElementById('confession-reply-text');
+
+    // ---------- 状态 ----------
+    let isListening = false;
+    let isSpeaking = false;
+    let silenceTimer = null;
+    let speechTimeout = null;
+    let isProcessing = false;
+    let isDestroyed = false;
+    let mediaStream = null;
+    let audioContext = null;
+    let analyser = null;
+    let dataArray = null;
+    let animationFrame = null;
+
+    // ---------- 字卡库 ----------
+    function getReplyPool() {
+        if (typeof customReplies !== 'undefined' && Array.isArray(customReplies) && customReplies.length > 0) {
+            return customReplies;
+        }
+        return [
+            "我明白你的感受。", "一切都会好起来的。", "我一直都在这里。",
+            "你的声音让我安心。", "慢慢说，我在听。", "无论你说什么，我都愿意听。",
+            "谢谢你愿意告诉我这些。", "你的心意我收到了。", "我们之间没有距离。",
+            "你比你自己想象的更勇敢。", "即使沉默，我也能感觉到你。",
+            "你的存在本身就很美好。", "我永远站在你这边。"
+        ];
+    }
+
+    function generateReply() {
+        const pool = getReplyPool();
+        if (!pool || pool.length === 0) return "我听见了你的声音。";
+        const count = Math.min(1 + Math.floor(Math.random() * 3), pool.length);
+        const shuffled = [...pool].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, count).join(' ');
+    }
+
+    // ---------- 显示回复（烟雾消散） ----------
+    function showReplyWithSmoke(text) {
+        if (!replyText) return;
+        replyText.classList.remove('show', 'smoke');
+        void replyText.offsetWidth;
+        replyText.textContent = text;
+        replyText.classList.add('show');
+
+        if (window.smokeTimeout) clearTimeout(window.smokeTimeout);
+        window.smokeTimeout = setTimeout(() => {
+            replyText.classList.remove('show');
+            replyText.classList.add('smoke');
+            setTimeout(() => {
+                replyText.classList.remove('smoke');
+                replyText.textContent = '';
+                window.smokeTimeout = null;
+            }, 3000);
+        }, 1500);
+    }
+
+    function setStateText(text) {
+        if (stateText) {
+            stateText.textContent = text;
+            stateText.style.opacity = text ? '1' : '0';
+        }
+    }
+
+    // ---------- 音频处理 ----------
+    function startListening() {
+        if (isListening || isProcessing) return;
+
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(stream => {
+                if (isDestroyed) { stream.getTracks().forEach(t => t.stop()); return; }
+                mediaStream = stream;
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.8;
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.fftSize);
+
+                isListening = true;
+                isSpeaking = false;
+                isProcessing = false;
+                clearTimeout(silenceTimer);
+                clearTimeout(speechTimeout);
+
+                breathBtn.classList.add('listening');
+                statusText.textContent = '倾听中 ...';
+                statusText.className = 'confession-status listening';
+                setStateText('我在听');
+
+                detectVolume();
+
+                speechTimeout = setTimeout(() => {
+                    if (isListening && !isSpeaking && !isProcessing) {
+                        stopListening(true);
+                    }
+                }, 30000);
+            })
+            .catch(err => {
+                console.warn('麦克风权限被拒绝:', err);
+                statusText.textContent = '无法访问麦克风';
+                statusText.className = 'confession-status';
+                setTimeout(() => {
+                    if (!isDestroyed) statusText.textContent = '点击呼吸灯重试';
+                }, 2000);
+            });
+    }
+
+    function detectVolume() {
+        if (!isListening || !analyser || !dataArray || isDestroyed) return;
+
+        analyser.getByteTimeDomainData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            const val = (dataArray[i] - 128) / 128;
+            sum += val * val;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        const threshold = 0.06;
+
+        if (rms > threshold) {
+            if (!isSpeaking) {
+                isSpeaking = true;
+                clearTimeout(silenceTimer);
+                statusText.textContent = '正在倾听 ...';
+                setStateText('请继续说...');
+            }
+            clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+                if (isListening && isSpeaking && !isProcessing) {
+                    isSpeaking = false;
+                    handleSilence();
+                }
+            }, 1200);
+        } else {
+            // 无声音时静音计时器继续运行
+        }
+
+        animationFrame = requestAnimationFrame(detectVolume);
+    }
+
+    function handleSilence() {
+        if (!isListening || isProcessing || isDestroyed) return;
+        if (isSpeaking) {
+            clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(handleSilence, 1200);
+            return;
+        }
+
+        isProcessing = true;
+        clearTimeout(silenceTimer);
+        clearTimeout(speechTimeout);
+
+        statusText.textContent = '正在思考 ...';
+        statusText.className = 'confession-status active';
+        setStateText('');
+
+        const thinkDelay = 600 + Math.random() * 800;
+        setTimeout(() => {
+            if (isDestroyed || !isListening) { isProcessing = false; return; }
+            const reply = generateReply();
+            showReplyWithSmoke(reply);
+            statusText.textContent = '已回应';
+            statusText.className = 'confession-status active';
+            setStateText('');
+
+            setTimeout(() => {
+                if (isListening && !isDestroyed) {
+                    isProcessing = false;
+                    isSpeaking = false;
+                    statusText.textContent = '倾听中 ...';
+                    statusText.className = 'confession-status listening';
+                    setStateText('继续说吧');
+                    clearTimeout(speechTimeout);
+                    speechTimeout = setTimeout(() => {
+                        if (isListening && !isSpeaking && !isProcessing) {
+                            stopListening(true);
+                        }
+                    }, 30000);
+                }
+            }, 800);
+        }, thinkDelay);
+    }
+
+    function stopListening(silent = false) {
+        if (!isListening) return;
+        isListening = false;
+        isProcessing = false;
+        clearTimeout(silenceTimer);
+        clearTimeout(speechTimeout);
+        if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+
+        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        if (audioContext && audioContext.state !== 'closed') { audioContext.close().catch(() => {}); audioContext = null; }
+        analyser = null;
+        dataArray = null;
+
+        breathBtn.classList.remove('listening');
+        if (!silent) {
+            statusText.textContent = '已停止倾听';
+            statusText.className = 'confession-status';
+            setStateText('静待诉说');
+            setTimeout(() => {
+                if (!isDestroyed && !isListening) {
+                    statusText.textContent = '点击呼吸灯开始倾诉';
+                }
+            }, 1500);
+        } else {
+            statusText.textContent = '倾听已结束';
+            statusText.className = 'confession-status';
+            setStateText('静待诉说');
+            setTimeout(() => {
+                if (!isDestroyed && !isListening) {
+                    statusText.textContent = '点击呼吸灯开始倾诉';
+                }
+            }, 1500);
+        }
+    }
+
+    // ---------- 切换 ----------
+    function toggleListening() {
+        if (isDestroyed) return;
+        if (isListening) {
+            stopListening(false);
+        } else {
+            startListening();
+        }
+    }
+
+    // ---------- 关闭 ----------
+    function closeConfession() {
+        if (isDestroyed) return;
+        isDestroyed = true;
+        if (isListening) stopListening(true);
+        clearTimeout(silenceTimer);
+        clearTimeout(speechTimeout);
+        if (window.smokeTimeout) { clearTimeout(window.smokeTimeout); window.smokeTimeout = null; }
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            isDestroyed = false;
+            isListening = false;
+            isSpeaking = false;
+            isProcessing = false;
+            statusText.textContent = '点击呼吸灯开始倾诉';
+            statusText.className = 'confession-status';
+            setStateText('静待诉说');
+            replyText.textContent = '';
+            replyText.classList.remove('show', 'smoke');
+            breathBtn.classList.remove('listening');
+        }, 300);
+    }
+
+    // ---------- 初始化 ----------
+    function initConfession() {
+        breathBtn.addEventListener('click', toggleListening);
+        exitBtn.addEventListener('click', closeConfession);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                closeConfession();
+            }
+        });
+        console.log('[倾诉] 功能已初始化');
+    }
+
+    // ---------- 对外入口 ----------
+    window.openConfession = function() {
+        isDestroyed = false;
+        if (isListening) stopListening(true);
+        clearTimeout(silenceTimer);
+        clearTimeout(speechTimeout);
+        if (window.smokeTimeout) { clearTimeout(window.smokeTimeout); window.smokeTimeout = null; }
+        overlay.classList.add('active');
+        statusText.textContent = '点击呼吸灯开始倾诉';
+        statusText.className = 'confession-status';
+        setStateText('静待诉说');
+        replyText.textContent = '';
+        replyText.classList.remove('show', 'smoke');
+        breathBtn.classList.remove('listening');
+        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        if (audioContext && audioContext.state !== 'closed') { audioContext.close().catch(() => {}); audioContext = null; }
+        analyser = null;
+        dataArray = null;
+        if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+        isListening = false;
+        isSpeaking = false;
+        isProcessing = false;
+    };
+
+    // ---------- 添加到高级功能 ----------
+    function addToAdvanced() {
+        const advancedModal = document.getElementById('advanced-modal');
+        if (!advancedModal) { setTimeout(addToAdvanced, 1000); return; }
+        const list = advancedModal.querySelector('.settings-item-list');
+        if (!list) return;
+        if (document.getElementById('confession-function-item')) return;
+        const entry = document.createElement('div');
+        entry.id = 'confession-function-item';
+        entry.className = 'settings-item';
+        entry.innerHTML = '<i class="fas fa-head-side-virus"></i><span>倾诉</span>';
+        entry.addEventListener('click', function() {
+            if (typeof hideModal === 'function' && advancedModal) hideModal(advancedModal);
+            if (typeof window.openConfession === 'function') window.openConfession();
+        });
+        list.appendChild(entry);
+        console.log('[倾诉] 已添加到高级功能');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initConfession();
+            setTimeout(addToAdvanced, 500);
+        });
+    } else {
+        initConfession();
+        setTimeout(addToAdvanced, 500);
     }
 
 })();
