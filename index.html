@@ -43184,5 +43184,50 @@ const firstDelay = 60 * 1000 + Math.random() * 14 * 60 * 1000; // 1-15分钟
 
 })();
 </script>
+        <!-- ========== 弹窗公告（安卓安装包）========== -->
+<div id="android-announcement-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100001; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); opacity:0; transition:opacity 0.3s ease; pointer-events:none;">
+  <div style="background:var(--secondary-bg); border-radius:24px; padding:28px 24px; max-width:420px; width:90%; box-shadow:0 24px 60px rgba(0,0,0,0.4); text-align:center; color:var(--text-primary);">
+    <h3 style="margin:0 0 16px; color:var(--accent-color); font-size:20px; font-weight:700;">安装包分享</h3>
+    <p style="font-size:15px; line-height:1.8; margin:0 0 12px; color:var(--text-primary);">
+      使用安卓手机的宝宝们现在可以打开仓库网址<br>
+      <a href="https://github.com/wanwanxuan/yangguangsaxia" target="_blank" style="color:var(--accent-color); text-decoration:underline;">https://github.com/wanwanxuan/yangguangsaxia</a><br>
+      下载安装包，比起网页更稳定、是独属于两个人的连接。
+    </p>
+    <p style="font-size:14px; line-height:1.7; margin:0 0 24px; color:var(--text-secondary);">
+      安装包下载流程问题以及一些小问题可以看小红书帖<br>
+      <a href="http://xhslink.com/o/5BdwcZDF7GO" target="_blank" style="color:var(--accent-color); text-decoration:underline;">http://xhslink.com/o/5BdwcZDF7GO</a><br>
+      感谢大家对我的二改网站的喜欢，一如既往地感谢原创milk老师开源 💛。
+    </p>
+    <button id="android-announcement-ok" style="display:inline-flex; align-items:center; gap:8px; padding:12px 36px; border:none; border-radius:14px; background:var(--accent-color); color:#fff; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-family);">
+      <i class="fas fa-check"></i> 我知道了
+    </button>
+  </div>
+</div>
+<script>
+(function(){
+  // 检测是否已经确认过公告
+  if (localStorage.getItem('android_announcement_v1_ack')) return;
+
+  const modal = document.getElementById('android-announcement-modal');
+  const btn = document.getElementById('android-announcement-ok');
+  if (!modal || !btn) return;
+
+  // 显示弹窗（透明渐入）
+  requestAnimationFrame(() => {
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
+  });
+
+  // 点击“我知道了”隐藏并标记已读
+  btn.addEventListener('click', function(){
+    modal.style.opacity = '0';
+    modal.style.pointerEvents = 'none';
+    localStorage.setItem('android_announcement_v1_ack', '1');
+    // 完全隐藏，处理动画结束后的 display 状态
+    setTimeout(() => { modal.style.display = 'none'; }, 350);
+  });
+})();
+</script>
+<!-- ========== 弹窗公告结束 ========== -->
 </body>
 </html>
