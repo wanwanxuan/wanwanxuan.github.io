@@ -26599,28 +26599,38 @@ function startVoiceDetection(dreamId) {
     }
 	
     function openChatPage() {
-        var chatPage = document.getElementById('chatPage');
-        if (!chatPage) return;
-        chatPage.classList.add('active');
-        chatPageVisible = true;
-        saveMusicState();
-        setupChatSwipe();
-        if (typeof lucide !== 'undefined') {
-            setTimeout(function() { lucide.createIcons(); }, 100);
-        }
-		renderChatDreamList();
+    var chatPage = document.getElementById('chatPage');
+    if (!chatPage) return;
+    chatPage.classList.add('active');
+    chatPageVisible = true;
+    saveMusicState();
+    setupChatSwipe();
+    if (typeof lucide !== 'undefined') {
+        setTimeout(function() { lucide.createIcons(); }, 100);
     }
+    renderChatDreamList();
+
+    // ===== 新增：网页端推入历史状态，用于拦截返回键 =====
+    if (!isPlusReady()) {
+        history.pushState({ chatPage: true }, '', window.location.href);
+    }
+}
   
     function closeChatPage() {
-        var chatPage = document.getElementById('chatPage');
-        if (!chatPage) return;
-        chatPage.classList.remove('active');
-        chatPageVisible = false;
-        closeAddMenu();
-        closeProfilePage();
-        hideMiniPlayer();
-        removeChatSwipe();
+    var chatPage = document.getElementById('chatPage');
+    if (!chatPage) return;
+    chatPage.classList.remove('active');
+    chatPageVisible = false;
+    closeAddMenu();
+    closeProfilePage();
+    hideMiniPlayer();
+    removeChatSwipe();
+
+    // ===== 新增：网页端清除历史记录中的 chatPage 状态 =====
+    if (!isPlusReady() && history.state && history.state.chatPage) {
+        history.replaceState(null, '', window.location.href);
     }
+}
   
     function handleChatSearch() {
         console.log('[聊天] 搜索按钮点击');
@@ -35705,6 +35715,15 @@ function cleanupAllChatTimers() {
 			    chatListContainer.addEventListener('touchmove', function() {}, { passive: true });
 			}
 			loadProfileData();
+			// ===== 新增：网页端返回键支持 =====
+if (!isPlusReady()) {
+    window.addEventListener('popstate', function(e) {
+        // 当历史记录状态为 chatPage 且聊天页面可见时，关闭聊天页面
+        if (e.state && e.state.chatPage && chatPageVisible) {
+            closeChatPage();
+        }
+    });
+}
 				loadDreamCharacters();  // 内部已调用 startIncomingCallScheduler()
 				loadMissValue();
 				setInterval(function() {
