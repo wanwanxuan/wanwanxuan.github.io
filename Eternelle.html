@@ -20429,7 +20429,19 @@
                     <i data-lucide="chevron-right"></i>
                 </div>
             </div>
-
+            <!-- 功能卡片4：软件声明 -->
+            <div class="settings-card" onclick="openSoftwareDeclaration()">
+                <div class="settings-card-icon" style="color:#7F8C8D;">
+                    <i data-lucide="file-text"></i>
+                </div>
+                <div class="settings-card-content">
+                    <div class="settings-card-title">软件声明</div>
+                    <div class="settings-card-desc">查看软件相关声明及使用须知</div>
+                </div>
+                <div class="settings-card-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
             <!-- 版本信息 -->
             <div class="settings-version">v1.0.0</div>
         </div>
@@ -20438,6 +20450,7 @@
 
 <!-- 隐藏的文件选择器（用于全局数据导入） -->
 <input type="file" id="globalImportFileInput" accept=".json,application/json" style="display:none" onchange="handleGlobalImportFileSelect(event)">
+
 <script>
     // ============ 性能优化核心 ============
   
@@ -21128,7 +21141,77 @@ var FONT_STORAGE_KEY = 'theme_data';
 var settingsPageVisible = false;
 var settingsTouchStartX = 0;
 var settingsTouchStartY = 0;
+// ============ 软件声明弹窗 ============
+function openSoftwareDeclaration() {
+    var overlay = document.createElement('div');
+    overlay.className = 'profile-edit-overlay';
+    overlay.style.zIndex = '950';
+    overlay.onclick = function(e) { if (e.target === this) closeSoftwareDeclaration(); };
 
+    var dialog = document.createElement('div');
+    dialog.className = 'profile-edit-dialog';
+    dialog.style.maxHeight = '80vh';
+    dialog.style.overflowY = 'auto';
+    dialog.style.maxWidth = '420px';
+    dialog.style.width = '90%';
+    dialog.style.textAlign = 'left';
+    dialog.style.padding = '20px 20px 16px';
+    dialog.onclick = function(e) { e.stopPropagation(); };
+
+    var title = document.createElement('div');
+    title.className = 'profile-edit-title';
+    title.textContent = '软件声明';
+    title.style.marginBottom = '16px';
+    title.style.textAlign = 'center';
+
+    var body = document.createElement('div');
+    body.style.cssText = 'font-size:14px;line-height:1.8;color:#333;';
+    body.innerHTML = `
+        <p>参考了小红书@milk（1149615009）老师传讯网站导出的字卡文件的格式，得以实现在本软件中导入milk字卡的功能。</p>
+        <p style="margin-top:12px;">软件原创制作者：小红书@阳光洒下（322411424）</p>
+        <p style="margin-top:12px;font-weight:bold;color:#c0392b;">本软件绝对禁止商用、贩卖或者任何盈利行为。</p>
+        <p style="margin-top:12px;">支持二传二改，HTML文件在 <a href="https://github.com/wanwanxuan/wanwanxuan.github.io" style="color:#2980b9;word-break:break-all;" target="_blank">https://github.com/wanwanxuan/wanwanxuan.github.io</a>。</p>
+        <p style="margin-top:16px;font-weight:bold;">本软件劝退以下人群使用：</p>
+        <ul style="padding-left:20px;margin:6px 0 0;">
+            <li>1.圈外人</li>
+            <li>2.疑虑使用本软件会招致怪力乱神事件的人</li>
+            <li>3.疑虑本软件内置AI的人</li>
+            <li>4.传讯不顺迁怒软件制作者的人</li>
+        </ul>
+        <p style="margin-top:14px;">如有冒犯，非常抱歉，也欢迎避雷。本人非常不赞同扩圈行为，请使用者不要在抖音、快手这两个容易推流到圈外的平台安利或者repo本软件，我也不会向圈外人解释字卡传讯的原理、为什么要用字卡传讯、这是在干嘛等等问题。</p>
+    `;
+
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'profile-edit-btn confirm';
+    closeBtn.textContent = '我知道了';
+    closeBtn.style.width = '100%';
+    closeBtn.style.marginTop = '16px';
+    closeBtn.style.padding = '10px';
+    closeBtn.onclick = closeSoftwareDeclaration;
+
+    dialog.appendChild(title);
+    dialog.appendChild(body);
+    dialog.appendChild(closeBtn);
+    overlay.appendChild(dialog);
+
+    document.body.appendChild(overlay);
+
+    // 使用 requestAnimationFrame 确保渲染完成后再显示
+    requestAnimationFrame(function() {
+        overlay.classList.add('active');
+        if (typeof lucide !== 'undefined') {
+            setTimeout(function() { lucide.createIcons(); }, 100);
+        }
+    });
+}
+
+function closeSoftwareDeclaration() {
+    var overlay = document.querySelector('.profile-edit-overlay[style*="z-index: 950;"]');
+    if (overlay) {
+        overlay.classList.remove('active');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 350);
+    }
+}
 // 打开设置页面
 function openSettingsPage() {
     if (settingsPageVisible) return;
