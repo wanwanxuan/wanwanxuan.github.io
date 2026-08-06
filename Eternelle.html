@@ -25184,6 +25184,7 @@ function scheduleDreamMomentPublish(dreamId) {
 
 // 执行梦角发布朋友圈
 function publishDreamMoment(dreamId) {
+	loadMomentsFeedData();
     // 从存储中移除任务
     removeDreamMomentTaskFromStorage(dreamId);
     delete dreamMomentTimers[dreamId];
@@ -49958,7 +49959,6 @@ function closeChatDialog() {
   
     page.classList.remove('active');
     chatDialogVisible = false;
-    cleanupAllChatTimers();
     clearQuotePreview();
     currentChatDreamId = null;
     currentChatMessages = [];
@@ -54534,7 +54534,7 @@ var chatSettingsModalVisible = false;
 var currentChatSettingsDreamId = null;   // 当前正在编辑设置的梦角ID
 var chatSettingsTempData = null;          // 编辑中的临时数据
 var chatSettingsAudio = null;             // 用于试听的Audio对象
-var chatSettingsReplyTimer = null;        // 梦角回复定时器（链式）
+var replyTimers = {};   // 存储每个梦角的回复定时器链
 var chatSettingsAutoMsgTimer = null;      // 主动发消息定时器
 var CHAT_SETTINGS_STORAGE_KEY_PREFIX = 'dream_chat_settings_';
 
@@ -55342,10 +55342,13 @@ function initNotificationSystem() {
     }
     
     // 浏览器环境：监听标签页可见性变化
-    if (typeof document.hidden !== 'undefined') {
+    if (!isPlusReady()) {
+        // 浏览器环境：监听页面可见性变化
         document.addEventListener('visibilitychange', function() {
-            isAppInForeground = !document.hidden;
-            console.log('[通知系统] 标签页可见性变化, 前台:', isAppInForeground);
+            if (!document.hidden) {
+                console.log('[生命周期] 页面恢复可见 (browser)');
+                onAppResume();
+            }
         });
     }
     
@@ -55654,12 +55657,17 @@ function checkAllDreamAutoMessages() {
         })(dreamId);
     }
 }
-// 清除梦角回复定时器链
-function clearChatSettingsReplyTimer() {
-    if (chatSettingsReplyTimer) {
-        clearTimeout(chatSettingsReplyTimer);
-        chatSettingsReplyTimer = null;
+function clearReplyTimer(dreamId) {
+    if (dreamId && replyTimers[dreamId]) {
+        clearTimeout(replyTimers[dreamId]);
+        delete replyTimers[dreamId];
     }
+}
+
+// 保留旧名兼容（内部调用新函数）
+function clearChatSettingsReplyTimer() {
+    // 此函数不再使用，保留为空或弃用
+    // 原调用处应改为 clearReplyTimer(dreamId)
 }
 // 获取指定梦角聊天记录中最近20条非系统消息中的随机一条，生成引用数据
 function getRandomQuoteForDream(dreamId) {
@@ -55695,7 +55703,9 @@ function getRandomQuoteForDream(dreamId) {
 function triggerDreamReply(dreamId) {
     if (!dreamId) return;
     var settings = loadChatSettings(dreamId);
-    clearChatSettingsReplyTimer();
+    
+    // 清除该梦角原有的回复定时器
+    clearReplyTimer(dreamId);
     hideTypingIndicator();
 
     var activeReplies = getActiveRepliesForDream(dreamId);
@@ -55705,21 +55715,27 @@ function triggerDreamReply(dreamId) {
         return;
     }
 
-    var replyCount = randomInt(1, 3);          // 随机回复 1~3 条
+    var replyCount = randomInt(1, 3);
     var sentCount = 0;
     var completed = false;
 
-    // 若开启“正在输入”提示，显示
     if (settings.typingIndicatorEnabled && dreamId === currentChatDreamId) {
         showTypingIndicator(dreamId);
     }
 
     function scheduleNext() {
         var delay = randomInt(settings.minReplyTime, settings.maxReplyTime) * 1000;
-        chatSettingsReplyTimer = setTimeout(function() {
+        var timerId = setTimeout(function() {
             if (completed) return;
 
-            // 随机选择回复类型：文本（默认）、表情包（20%）、语音（10%）
+            // 检查该梦角是否仍存在
+            var dream = getDreamCharacterById(dreamId);
+            if (!dream) {
+                completed = true;
+                delete replyTimers[dreamId];
+                return;
+            }
+
             var msg;
             var replyText = generateDreamReplyMessage(dreamId);
             var rand = Math.random();
@@ -55727,7 +55743,6 @@ function triggerDreamReply(dreamId) {
             if (rand < 0.10) {
                 var voiceText = replyText;
                 var voicePrefix = null;
-                // 50% 概率添加语气词
                 if (Math.random() < 0.50) {
                     var prefixes = ['(laughs)', '(chuckle)', '(clear-throat)', '(coughs)', '(breath)', '(inhale)', '(exhale)', '(sniffs)', '(sighs)', '(snorts)', '(lip-smacking)', '(humming)'];
                     voicePrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
@@ -55738,11 +55753,10 @@ function triggerDreamReply(dreamId) {
                     type: 'voice',
                     voiceText: voiceText,
                     voiceDuration: estimateVoiceDuration(voiceText),
-                    voicePrefix: voicePrefix,  // 新增字段，存储语气词
+                    voicePrefix: voicePrefix,
                     timestamp: Date.now()
                 };
             } else if (rand < 0.30) {
-                // 20% 概率发送表情包（若梦角有表情库）
                 var emojiUrl = getRandomDreamEmojiUrl(dreamId);
                 if (emojiUrl) {
                     msg = {
@@ -55753,7 +55767,6 @@ function triggerDreamReply(dreamId) {
                         timestamp: Date.now()
                     };
                 } else {
-                    // 无表情包则回退为文本
                     msg = {
                         id: 'msg_dream_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                         sender: 'dream',
@@ -55762,7 +55775,6 @@ function triggerDreamReply(dreamId) {
                     };
                 }
             } else {
-                // 默认发送文本
                 msg = {
                     id: 'msg_dream_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                     sender: 'dream',
@@ -55771,29 +55783,26 @@ function triggerDreamReply(dreamId) {
                 };
             }
 
-            // 10% 概率随机引用历史消息
             if (Math.random() < 0.10) {
                 var quote = getRandomQuoteForDream(dreamId);
-                if (quote) {
-                    msg.quote = quote;
-                }
+                if (quote) msg.quote = quote;
             }
 
-            // 发送消息并更新界面/存储/通知
             sendSingleDreamMsgAndTrack(dreamId, msg);
-
             sentCount++;
+
             if (sentCount < replyCount) {
-                // 未达到回复次数，继续调度下一条
                 scheduleNext();
             } else {
-                // 回复完毕，标记完成并隐藏打字指示
                 completed = true;
                 if (settings.typingIndicatorEnabled && dreamId === currentChatDreamId) {
                     setTimeout(hideTypingIndicator, 500);
                 }
+                delete replyTimers[dreamId];
             }
         }, delay);
+
+        replyTimers[dreamId] = timerId;
     }
 
     scheduleNext();
@@ -55873,8 +55882,13 @@ function initAutoMsgOnChatOpen(dreamId) {
     renderChatDreamList();
 }
 
-// 在聊天对话框关闭时清除回复定时器（全局检查器保留）
 function cleanupAllChatTimers() {
+    for (var id in replyTimers) {
+        if (replyTimers.hasOwnProperty(id)) {
+            clearTimeout(replyTimers[id]);
+        }
+    }
+    replyTimers = {};
 }
     // ============ 文件导入功能 ============
     function setupFileImport() {
@@ -57973,6 +57987,62 @@ function cleanupAllChatTimers() {
 	    callState.active = false;
 	    hideCallUI();
 	}
+	// ============ 应用恢复前台处理 ============
+	function onAppResume() {
+	    console.log('[生命周期] 应用恢复前台，检查聊天状态');
+	    
+	    // ---- 处理私聊 ----
+	    if (chatDialogVisible && currentChatDreamId) {
+	        var dream = getDreamCharacterById(currentChatDreamId);
+	        if (dream) {
+	            // 1. 重新从 storage 加载消息
+	            var messages = loadChatHistory(currentChatDreamId);
+	            if (messages) {
+	                currentChatMessages = messages;
+	                // 2. 重新应用头像气泡样式
+	                applyAvatarBubbleToChat(currentChatDreamId);
+	                // 3. 重新应用聊天背景
+	                applyChatBgToDialog(currentChatDreamId);
+	                // 4. 刷新界面
+	                renderChatDialogMessages();
+	                scrollChatToBottom();
+	                // 5. 清除未读计数
+	                clearUnreadCount(currentChatDreamId);
+	                renderChatDreamList();
+	                console.log('[生命周期] 私聊消息已重新加载，共 ' + messages.length + ' 条');
+	            }
+	        } else {
+	            // 梦角已被删除，关闭对话框
+	            closeChatDialog();
+	        }
+	        return;
+	    }
+	    
+	    // ---- 处理群聊 ----
+	    if (groupDialogVisible && currentGroupId) {
+	        var group = groups.find(function(g) { return g.id === currentGroupId; });
+	        if (group) {
+	            // 1. 应用群聊背景
+	            applyChatBgToDialog(currentGroupId);
+	            // 2. 应用群聊用户气泡样式
+	            applyGroupUserBubbleCss(currentGroupId);
+	            // 3. 刷新界面
+	            renderGroupChatMessages();
+	            scrollChatToBottom();
+	            // 4. 清除未读计数
+	            setGroupUnreadCount(currentGroupId, 0);
+	            renderChatDreamList();
+	            console.log('[生命周期] 群聊消息已重新加载');
+	        } else {
+	            // 群聊已被删除，关闭对话框
+	            closeGroupChatDialog();
+	        }
+	        return;
+	    }
+	    
+	    // ---- 如果没有任何对话框打开，仅刷新聊天列表 ----
+	    renderChatDreamList();
+	}
 	// 修改消息预览函数 getMessagePreview，增加红包类型
 	// 原函数在 getMessagePreview 中，需要替换
     // ============ 生命周期初始化 ============
@@ -58131,7 +58201,8 @@ function cleanupAllChatTimers() {
         });
       
         document.addEventListener('resume', function() {
-            console.log('[生命周期] 应用恢复前台');
+            console.log('[生命周期] 应用恢复前台 (plus)');
+            onAppResume();
         });
     }
 	
