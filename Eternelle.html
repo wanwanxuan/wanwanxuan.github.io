@@ -13648,19 +13648,19 @@
 		}
 		
 		.moments-container {
-    flex: 1;
-    display: none;
-    flex-direction: column;
-    background: #f0f2f5;
-    overflow: hidden;          /* ← 将 visible 改为 hidden */
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    contain: layout style;
-    min-height: 0;
-}
+		    flex: 1;
+		    display: none;
+		    flex-direction: column;
+		    background: #f0f2f5;
+		    overflow: visible;          /* 允许子元素溢出显示 */
+		    will-change: transform;
+		    backface-visibility: hidden;
+		    -webkit-backface-visibility: hidden;
+		    transform: translateZ(0);
+		    -webkit-transform: translateZ(0);
+		    contain: layout style;      /* 移除 paint，避免裁剪溢出 */
+		    min-height: 0;
+		}
 		
 		/* ---- 朋友圈顶栏 ---- */
 		.moments-header {
@@ -21229,40 +21229,64 @@ var settingsTouchStartY = 0;
                     // 允许在明确的滚动容器内滚动，禁止页面级穿透
                     var target = e.target;
                     var isScrollable = target.closest && target.closest(
-                        '.chat-dialog-messages, ' +
-                        '.chat-list-container, ' +
-                        '.emoji-grid-container, ' +
-                        '.memorial-list-container, ' +
-                        '.todo-list-container, ' +
-                        '.bill-list-container, ' +
-                        '.reply-lib-body, ' +
-                        '.lib-manage-list, ' +
-                        '.settings-body, ' +
-                        '.theme-body, ' +
-                        '.reading-room-body, ' +
-                        '.reading-content, ' +
-                        '.comment-messages, ' +
-                        '.movie-comment-messages, ' +
-                        '.game-records-list, ' +
-                        '.music-history-list, ' +
-                        '.day-records-wrap, ' +
-                        '.fanfic-history-list, ' +
-                        '.fanfic-result-content, ' +
-                        '.dream-editor-content, ' +
-                        '.more-func-pages-wrapper, ' +
-                        '.moment-actions-dropdown, ' +
-                        '.focus-actions-dropdown, ' +
-                        '.letter-body, ' +
-                        '.survey-body, ' +
-                        '.gift-modal-body, ' +
-                        '.gift-text-list, ' +
-                        '.avatar-bubble-body, ' +
-                        '.chat-settings-body, ' +
-                        '.voice-settings-body, ' +
-                        '.search-result-list, ' +
-                        '.search-result-item, ' +
-                        '#searchChatResults'
-                    );
+    '.chat-dialog-messages, ' +
+    '.chat-list-container, ' +
+    '.emoji-grid-container, ' +
+    '.memorial-list-container, ' +
+    '.todo-list-container, ' +
+    '.bill-list-container, ' +
+    '.reply-lib-body, ' +
+    '.lib-manage-list, ' +
+    '.settings-body, ' +
+    '.theme-body, ' +
+    '.reading-room-body, ' +
+    '.reading-content, ' +
+    '.comment-messages, ' +
+    '.movie-comment-messages, ' +
+    '.game-records-list, ' +
+    '.music-history-list, ' +
+    '.day-records-wrap, ' +
+    '.fanfic-history-list, ' +
+    '.fanfic-result-content, ' +
+    '.dream-editor-content, ' +
+    '.more-func-pages-wrapper, ' +
+    '.moment-actions-dropdown, ' +
+    '.focus-actions-dropdown, ' +
+    '.letter-body, ' +
+    '.survey-body, ' +
+    '.gift-modal-body, ' +
+    '.gift-text-list, ' +
+    '.avatar-bubble-body, ' +
+    '.chat-settings-body, ' +
+    '.voice-settings-body, ' +
+    '.search-result-list, ' +
+    '.search-result-item, ' +
+    '#searchChatResults, ' +
+    // ========== 新增补充 ==========
+    '#dreamInfoPage, ' +                    // 梦角信息页
+    '#dreamInfoMenuList, ' +
+    '.moments-content, ' +                  // 朋友圈内容
+    '#momentsFeedContainer, ' +
+    '#momentsContainer, ' +
+    '#profilePage, ' +                      // 用户信息页
+    '.handaccount-body, ' +                 // 手账页面
+    '.takeout-body, ' +                     // 外卖页面
+    '.decision-body, ' +                    // 抉择页面
+    '.divination-body, ' +                  // 占卜页面
+    '.fanfic-body, ' +                      // 同人文页面
+    '.dream-emoji-lib-body, ' +             // 梦角表情库
+    '.miss-bg-panel-body, ' +               // 思念值背景选择
+    '.polaroid2-picker-list, ' +            // 拍立得梦角选择
+    '.group-avatar-body, ' +                // 群聊头像设置
+    '.group-user-bubble-body, ' +           // 群聊用户气泡设置
+    '.chat-bg-body, ' +                     // 聊天背景设置
+    '.survey-edit-body, ' +                 // 问卷编辑
+    '.profile-edit-dialog, ' +              // 所有通用编辑弹窗（纪念日、小说等）
+    '.reply-lib-sub-dialog, ' +             // 字卡库子弹窗
+    '.forward-dream-list, ' +               // 转发选择列表
+    '#momentsListContainer, ' +             // 瞬间收藏列表
+    '.merged-forward-detail-body'           // 合并转发详情
+);
                     if (!isScrollable) {
                         e.preventDefault();
                     }
