@@ -30,15 +30,57 @@
 		    user-select: auto;
 		}
 
+                /* ==================== 修复网页端页面可滑动问题 ==================== */
+        html,
         body {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: auto;
+            touch-action: none;
+            /* 兼容移动端地址栏动态伸缩 */
+            min-height: 100dvh;
+            min-height: 100vh;
+        }
+
+        body {
             font-family: var(--font-family, "QIJIC", sans-serif);
             font-weight: normal;
             will-change: font-family;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+
+        .page-container {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            overscroll-behavior: contain;
+            touch-action: none;
+            /* 提前创建合成层，降低平移渲染成本 */
+            will-change: transform;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        /* ==================== 全局禁止浏览器默认滑动穿透/橡皮筋 ==================== */
+        * {
+            overscroll-behavior: none;
         }
         
         /* 为所有文本元素启用字体继承优化，同时保留硬件加速 */
@@ -46,13 +88,6 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
-        }
-
-        .page-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
         }
 
         .wallpaper {
@@ -21141,6 +21176,94 @@ var FONT_STORAGE_KEY = 'theme_data';
 var settingsPageVisible = false;
 var settingsTouchStartX = 0;
 var settingsTouchStartY = 0;
+        // ==================== 网页端固定视口强化 ====================
+        (function() {
+            var bodyEl = document.body,
+                rootEl = document.documentElement;
+
+            function lockViewport() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+                var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || 0;
+                // 强制滚回原位，避免露出白页
+                if (scrollTop !== 0 || scrollLeft !== 0) {
+                    window.scrollTo(0, 0);
+                }
+                // 锁定 body 位置
+                if (bodyEl.style.position !== 'fixed') {
+                    bodyEl.style.position = 'fixed';
+                    bodyEl.style.top = '0';
+                    bodyEl.style.left = '0';
+                    bodyEl.style.right = '0';
+                    bodyEl.style.bottom = '0';
+                    bodyEl.style.width = '100%';
+                    bodyEl.style.height = '100%';
+                    bodyEl.style.margin = '0';
+                    bodyEl.style.padding = '0';
+                    bodyEl.style.overflow = 'hidden';
+                }
+                if (rootEl.style.overflow !== 'hidden') {
+                    rootEl.style.overflow = 'hidden';
+                }
+            }
+
+            // 启动时立即锁定
+            lockViewport();
+
+            // 防止移动端地址栏变化导致视口跳动
+            window.addEventListener('resize', function() {
+                lockViewport();
+            });
+
+            window.addEventListener('scroll', function() {
+                window.scrollTo(0, 0);
+            }, { passive: false });
+
+            // 禁止 body 根容器上的触摸移动默认行为（内部列表仍可通过自身的滚动容器滚动）
+            if (bodyEl) {
+                bodyEl.addEventListener('touchmove', function(e) {
+                    // 允许在明确的滚动容器内滚动，禁止页面级穿透
+                    var target = e.target;
+                    var isScrollable = target.closest && target.closest(
+                        '.chat-dialog-messages, ' +
+                        '.chat-list-container, ' +
+                        '.emoji-grid-container, ' +
+                        '.memorial-list-container, ' +
+                        '.todo-list-container, ' +
+                        '.bill-list-container, ' +
+                        '.reply-lib-body, ' +
+                        '.lib-manage-list, ' +
+                        '.settings-body, ' +
+                        '.theme-body, ' +
+                        '.reading-room-body, ' +
+                        '.reading-content, ' +
+                        '.comment-messages, ' +
+                        '.movie-comment-messages, ' +
+                        '.game-records-list, ' +
+                        '.music-history-list, ' +
+                        '.day-records-wrap, ' +
+                        '.fanfic-history-list, ' +
+                        '.fanfic-result-content, ' +
+                        '.dream-editor-content, ' +
+                        '.more-func-pages-wrapper, ' +
+                        '.moment-actions-dropdown, ' +
+                        '.focus-actions-dropdown, ' +
+                        '.letter-body, ' +
+                        '.survey-body, ' +
+                        '.gift-modal-body, ' +
+                        '.gift-text-list, ' +
+                        '.avatar-bubble-body, ' +
+                        '.chat-settings-body, ' +
+                        '.voice-settings-body, ' +
+                        '.search-result-list, ' +
+                        '.search-result-item, ' +
+                        '#searchChatResults'
+                    );
+                    if (!isScrollable) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+        })();
 // ============ 软件声明弹窗 ============
 function openSoftwareDeclaration() {
     var overlay = document.createElement('div');
