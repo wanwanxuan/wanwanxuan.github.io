@@ -3,13 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Eternelle.传讯</title>
     <link rel="stylesheet" href="https://fontsapi.zeoseven.com/81/main/result.css">
-	<link rel="icon" type="image/png" sizes="192x192" href="https://i.postimg.cc/Qd7hz2Qg/image-1779534239221.png">
-<link rel="apple-touch-icon" href="https://i.postimg.cc/Qd7hz2Qg/image-1779534239221.png">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
 		@import url("https://fontsapi.zeoseven.com/445/main/result.css");
@@ -4574,6 +4569,7 @@
 		    stroke-width: 2;
 		    fill: none;
 		}
+		
 		.xhs-modal-body {
 		    flex: 1;
 		    overflow-y: auto;
@@ -21180,7 +21176,6 @@ var FONT_STORAGE_KEY = 'theme_data';
 var settingsPageVisible = false;
 var settingsTouchStartX = 0;
 var settingsTouchStartY = 0;
-        
 // ============ 软件声明弹窗 ============
 function openSoftwareDeclaration() {
     var overlay = document.createElement('div');
@@ -49536,15 +49531,15 @@ function renderGroupChatMessages() {
                 var inner = document.createElement('span');
                 inner.className = 'chat-withdraw-inner';
                 var displayName = msg.dreamNickname || '梦角';
-                inner.textContent = displayName + '撤回了一条消息';
+                inner.textContent = displayName + '撤回了一条消息，点击查看';
                 withdrawTip.appendChild(inner);
                 (function(currentMsg) {
                     withdrawTip.onclick = function() {
                         openWithdrawPreview(
-                            currentMsg.dreamId || '',
+                            currentMsg.dreamId || currentChatDreamId,
                             currentMsg.originalText || '',
-                            currentMsg.originalType || 'text',
-                            currentMsg.originalEmojiUrl || ''
+                            currentMsg.originalType,
+                            currentMsg.originalEmojiUrl
                         );
                     };
                 })(msg);
@@ -50846,7 +50841,7 @@ function groupMemberReply(dreamId, groupId) {
                 scheduleNext();
             } else {
                 completed = true;
-                if (settings.retractEnabled && Math.random() < 0.30 && sentMessages.length > 0) {
+                if (settings.retractEnabled && Math.random() < 0.10 && sentMessages.length > 0) {
                     var lastMsg = sentMessages[sentMessages.length - 1];
                     var retractDelay = randomInt(2, 5) * 1000;
                     setTimeout(function() {
@@ -54621,7 +54616,7 @@ function closeWithdrawPreview() {
     var contentEl = document.getElementById('withdrawPreviewContent');
     if (contentEl) contentEl.innerHTML = '';
 }
-function createWithdrawMessage(originalMsg) {
+function createWithdrawMessage(originalMsg, dreamId, dreamNickname) {
     return {
         id: 'msg_withdraw_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
         sender: 'system',
@@ -54630,7 +54625,8 @@ function createWithdrawMessage(originalMsg) {
         originalType: originalMsg.type || 'text',
         originalEmojiUrl: originalMsg.emojiUrl || '',
         originalMsgId: originalMsg.id,
-        dreamId: currentChatDreamId,
+        dreamId: dreamId || currentChatDreamId,
+        dreamNickname: dreamNickname || '',
         timestamp: Date.now()
     };
 }
@@ -54645,7 +54641,14 @@ function replaceMsgWithWithdraw(dreamId, originalMsg) {
         }
     }
     if (idx === -1) return;
-    var withdrawMsg = createWithdrawMessage(originalMsg);
+    
+    // 获取梦角信息，用于撤回提示
+    var dream = getDreamCharacterById(dreamId);
+    var dreamNickname = dream ? (dream.nickname || '未命名梦角') : '梦角';
+    var dreamAvatar = dream ? (dream.localAvatar || dream.urlAvatar || '') : '';
+    
+    // 创建撤回消息（传入 dreamId 和 nickname）
+    var withdrawMsg = createWithdrawMessage(originalMsg, dreamId, dreamNickname);
     // 替换原消息
     messages[idx] = withdrawMsg;
     saveChatHistory(dreamId, messages);
@@ -54658,13 +54661,10 @@ function replaceMsgWithWithdraw(dreamId, originalMsg) {
     // 更新聊天列表预览
     renderChatDreamList();
     // 发送撤回通知（仅当用户未在对话框内时）
-    var dream = getDreamCharacterById(dreamId);
-    var dreamNickname = dream ? (dream.nickname || '未命名梦角') : '梦角';
-    var dreamAvatar = dream ? (dream.localAvatar || dream.urlAvatar || '') : '';
     if (!chatDialogVisible || currentChatDreamId !== dreamId) {
         window._sendPartnerNotification(
             dreamNickname,
-            '对方撤回了一条消息',
+            '撤回了一条消息',
             dreamId,
             dreamAvatar
         );
@@ -55758,6 +55758,7 @@ function triggerDreamReply(dreamId) {
     var replyCount = randomInt(1, 3);
     var sentCount = 0;
     var completed = false;
+    var sentMessages = [];   // 新增：记录本次回复链中已发送的消息
 
     if (settings.typingIndicatorEnabled && dreamId === currentChatDreamId) {
         showTypingIndicator(dreamId);
@@ -55829,6 +55830,7 @@ function triggerDreamReply(dreamId) {
             }
 
             sendSingleDreamMsgAndTrack(dreamId, msg);
+            sentMessages.push(msg);   // 新增：记录已发送的消息
             sentCount++;
 
             if (sentCount < replyCount) {
@@ -55839,6 +55841,16 @@ function triggerDreamReply(dreamId) {
                     setTimeout(hideTypingIndicator, 500);
                 }
                 delete replyTimers[dreamId];
+                
+                // ===== 新增：私聊撤回逻辑 - 修复撤回功能 =====
+                // 与群聊逻辑一致：若开启撤回且概率命中，则撤回最后一条发送的消息
+                if (settings.retractEnabled && Math.random() < 0.10 && sentMessages.length > 0) {
+                    var lastMsg = sentMessages[sentMessages.length - 1];
+                    var retractDelay = randomInt(2, 5) * 1000; // 2~5秒后撤回
+                    setTimeout(function() {
+                        replaceMsgWithWithdraw(dreamId, lastMsg);
+                    }, retractDelay);
+                }
             }
         }, delay);
 
