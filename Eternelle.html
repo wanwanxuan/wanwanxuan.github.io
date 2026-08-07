@@ -13648,19 +13648,19 @@
 		}
 		
 		.moments-container {
-		    flex: 1;
-		    display: none;
-		    flex-direction: column;
-		    background: #f0f2f5;
-		    overflow: visible;          /* 允许子元素溢出显示 */
-		    will-change: transform;
-		    backface-visibility: hidden;
-		    -webkit-backface-visibility: hidden;
-		    transform: translateZ(0);
-		    -webkit-transform: translateZ(0);
-		    contain: layout style;      /* 移除 paint，避免裁剪溢出 */
-		    min-height: 0;
-		}
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    background: #f0f2f5;
+    overflow: hidden;          /* ← 将 visible 改为 hidden */
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    contain: layout style;
+    min-height: 0;
+}
 		
 		/* ---- 朋友圈顶栏 ---- */
 		.moments-header {
