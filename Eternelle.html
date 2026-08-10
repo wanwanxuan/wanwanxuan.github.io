@@ -54890,7 +54890,7 @@ function renderChatSettingsUI() {
         retractToggle.className = 'chat-settings-toggle' + (chatSettingsTempData.retractEnabled ? ' active' : '');
     }
     
-        // ===== 红包选项：检查是否已存在，避免重复添加 =====
+    // ===== 红包选项：检查是否已存在，避免重复添加 =====
     var existingToggle = document.getElementById('csRedpacketToggle');
     if (!existingToggle) {
         var redpacketSection = document.createElement('div');
@@ -54910,17 +54910,18 @@ function renderChatSettingsUI() {
         } else {
             document.getElementById('chatSettingsBody').appendChild(redpacketSection);
         }
-    }
-
-    // 无论新建还是已存在，都同步显示红包开关状态
-    var rpToggle = document.getElementById('csRedpacketToggle');
-    if (rpToggle) {
-        if (chatSettingsTempData.redpacketEnabled) {
-            rpToggle.classList.add('active');
-        } else {
-            rpToggle.classList.remove('active');
+    } else {
+        // 已存在，只更新状态
+        var rpToggle = document.getElementById('csRedpacketToggle');
+        if (rpToggle) {
+            if (chatSettingsTempData.redpacketEnabled) {
+                rpToggle.classList.add('active');
+            } else {
+                rpToggle.classList.remove('active');
+            }
         }
     }
+}
 
 function toggleChatSettingsRedpacket() {
     if (!chatSettingsTempData) return;
@@ -55198,12 +55199,6 @@ function saveChatSettingsAndClose() {
     // 确保最短不超过最长
     if (chatSettingsTempData.minReplyTime > chatSettingsTempData.maxReplyTime) {
         chatSettingsTempData.minReplyTime = chatSettingsTempData.maxReplyTime;
-    }
-
-    // 从 UI 同步红包开关状态，防止 UI 与数据不一致导致错误覆盖
-    var redpacketToggleEl = document.getElementById('csRedpacketToggle');
-    if (redpacketToggleEl) {
-        chatSettingsTempData.redpacketEnabled = redpacketToggleEl.classList.contains('active');
     }
 
     // 保存到原生存储
