@@ -52373,28 +52373,69 @@ function getStatusLibKey(dreamId) { return 'dream_status_lib_' + dreamId; }
 function getStatusCurrentKey(dreamId) { return 'dream_status_current_' + dreamId; }
 function getStatusNextKey(dreamId) { return 'dream_status_next_' + dreamId; }
 
-// 通用原生存储读取
+// ============ 通用存储读写（已适配IndexedDB + 内存缓存 + localStorage兜底） ============
 function storageGetItem(key, fallback) {
-    var val = null;
+    if (!key) return fallback;
+    
+    // 1. 内存缓存优先（启动时已从IndexedDB加载）
+    if (key in memoryCache) {
+        var cachedVal = memoryCache[key];
+        if (cachedVal !== null && cachedVal !== undefined) {
+            return cachedVal;
+        }
+    }
+    
+    // 2. 5+ App：原生存储
     if (isPlusReady()) {
-        try { val = plus.storage.getItem(key); } catch(e) {}
+        try {
+            var nativeVal = plus.storage.getItem(key);
+            if (nativeVal !== null && nativeVal !== undefined) {
+                memoryCache[key] = nativeVal;
+                return nativeVal;
+            }
+        } catch(e) {}
     }
-    if (val === null || val === undefined) {
-        try { val = localStorage.getItem(key); } catch(e) {}
-    }
-    if (val === null || val === undefined) return fallback;
-    return val;
+    
+    // 3. 浏览器：localStorage（仅在IndexedDB未加载完成时兜底）
+    try {
+        var lsVal = localStorage.getItem(key);
+        if (lsVal !== null && lsVal !== undefined) {
+            memoryCache[key] = lsVal;
+            return lsVal;
+        }
+    } catch(e) {}
+    
+    return fallback;
 }
 
-// 通用原生存储写入
 function storageSetItem(key, value) {
+    if (!key) return;
+    
+    // 更新内存缓存
+    memoryCache[key] = value;
+    
+    // 5+ App：写入原生存储（同时写localStorage兜底）
     if (isPlusReady()) {
-        try { plus.storage.setItem(key, value); } catch(e) {
+        try {
+            plus.storage.setItem(key, value);
+        } catch(e) {
+            // 原生存储失败时写localStorage
             try { localStorage.setItem(key, value); } catch(e2) {}
         }
-    } else {
-        try { localStorage.setItem(key, value); } catch(e) {}
+        return;
     }
+    
+    // 浏览器环境：
+    // 1) 同步写入localStorage（尽力而为，容量满则忽略）
+    try {
+        localStorage.setItem(key, value);
+    } catch(e) {
+        // localStorage可能已满（5MB），静默忽略
+    }
+    // 2) 异步写入IndexedDB（核心存储，容量可达数百MB）
+    IDBHelper.set(key, value).catch(function(err) {
+        console.warn('IndexedDB写入失败:', err);
+    });
 }
 
 // 获取签名库
@@ -54849,7 +54890,7 @@ function renderChatSettingsUI() {
         retractToggle.className = 'chat-settings-toggle' + (chatSettingsTempData.retractEnabled ? ' active' : '');
     }
     
-    // ===== 红包选项：检查是否已存在，避免重复添加 =====
+        // ===== 红包选项：检查是否已存在，避免重复添加 =====
     var existingToggle = document.getElementById('csRedpacketToggle');
     if (!existingToggle) {
         var redpacketSection = document.createElement('div');
@@ -54869,15 +54910,15 @@ function renderChatSettingsUI() {
         } else {
             document.getElementById('chatSettingsBody').appendChild(redpacketSection);
         }
-    } else {
-        // 已存在，只更新状态
-        var rpToggle = document.getElementById('csRedpacketToggle');
-        if (rpToggle) {
-            if (chatSettingsTempData.redpacketEnabled) {
-                rpToggle.classList.add('active');
-            } else {
-                rpToggle.classList.remove('active');
-            }
+    }
+
+    // 无论新建还是已存在，都同步显示红包开关状态
+    var rpToggle = document.getElementById('csRedpacketToggle');
+    if (rpToggle) {
+        if (chatSettingsTempData.redpacketEnabled) {
+            rpToggle.classList.add('active');
+        } else {
+            rpToggle.classList.remove('active');
         }
     }
 }
@@ -55158,6 +55199,12 @@ function saveChatSettingsAndClose() {
     // 确保最短不超过最长
     if (chatSettingsTempData.minReplyTime > chatSettingsTempData.maxReplyTime) {
         chatSettingsTempData.minReplyTime = chatSettingsTempData.maxReplyTime;
+    }
+
+    // 从 UI 同步红包开关状态，防止 UI 与数据不一致导致错误覆盖
+    var redpacketToggleEl = document.getElementById('csRedpacketToggle');
+    if (redpacketToggleEl) {
+        chatSettingsTempData.redpacketEnabled = redpacketToggleEl.classList.contains('active');
     }
 
     // 保存到原生存储
@@ -58157,10 +58204,22 @@ function cleanupAllChatTimers() {
     });
   
     window.addEventListener('DOMContentLoaded', function() {
-        console.log('[生命周期] DOMContentLoaded 触发');
-		// 初始化通知系统
-		initNotificationSystem();
-          initTheme();
+    console.log('[生命周期] DOMContentLoaded 触发');
+    // 初始化通知系统
+    initNotificationSystem();
+    // 初始化IndexedDB存储（突破5MB限制）
+    initIndexedDBStorage().then(function() {
+        // 存储初始化完成后，确保所有UI渲染使用最新数据
+        if (typeof loadProfileData === 'function') loadProfileData();
+        if (typeof loadMissValue === 'function') loadMissValue();
+        if (typeof loadDreamCharacters === 'function') loadDreamCharacters();
+        if (typeof loadGroupData === 'function') loadGroupData();
+        if (typeof loadEmojiData === 'function') loadEmojiData();
+        if (typeof loadMemorialData === 'function') loadMemorialData();
+        if (typeof renderHomeMemorialWidget === 'function') renderHomeMemorialWidget();
+        console.log('存储初始化完成，所有数据已加载');
+    });
+    initTheme();
             // 基础 UI 更新（时间等）
             updateDateTime();
             startOptimizedTimer();
@@ -58297,7 +58356,170 @@ function cleanupAllChatTimers() {
 	            cleanupCallResources();
 	            stopVoiceDetection(); // 保证麦克风资源释放
 	        });
+// ============ IndexedDB 存储适配层（突破localStorage 5MB限制） ============
+// 内存缓存（所有读写操作先经过这里，避免异步等待）
+var memoryCache = Object.create(null);
+var idbReady = false;
 
+// 极简 IndexedDB 封装（无外部依赖）
+var IDBHelper = {
+    db: null,
+    dbName: 'eternelle_webstore',
+    storeName: 'kv',
+    
+    async open() {
+        if (this.db) return this.db;
+        if (typeof indexedDB === 'undefined') {
+            throw new Error('IndexedDB 不可用');
+        }
+        return new Promise(function(resolve, reject) {
+            var req = indexedDB.open(IDBHelper.dbName, 1);
+            req.onupgradeneeded = function(e) {
+                var db = e.target.result;
+                if (!db.objectStoreNames.contains(IDBHelper.storeName)) {
+                    db.createObjectStore(IDBHelper.storeName);
+                }
+            };
+            req.onsuccess = function(e) {
+                IDBHelper.db = e.target.result;
+                resolve(IDBHelper.db);
+            };
+            req.onerror = function(e) {
+                reject(e.target.error || new Error('IndexedDB 打开失败'));
+            };
+        });
+    },
+
+    async getAllKeys() {
+        var db = await this.open();
+        return new Promise(function(resolve, reject) {
+            var tx = db.transaction(IDBHelper.storeName, 'readonly');
+            var req = tx.objectStore(IDBHelper.storeName).getAllKeys();
+            req.onsuccess = function() { resolve(req.result || []); };
+            req.onerror = function() { reject(req.error); };
+        });
+    },
+
+    async get(key) {
+        var db = await this.open();
+        return new Promise(function(resolve, reject) {
+            var tx = db.transaction(IDBHelper.storeName, 'readonly');
+            var req = tx.objectStore(IDBHelper.storeName).get(key);
+            req.onsuccess = function() { resolve(req.result); };
+            req.onerror = function() { reject(req.error); };
+        });
+    },
+
+    async set(key, value) {
+        var db = await this.open();
+        return new Promise(function(resolve, reject) {
+            var tx = db.transaction(IDBHelper.storeName, 'readwrite');
+            tx.objectStore(IDBHelper.storeName).put(value, key);
+            tx.oncomplete = function() { resolve(); };
+            tx.onerror = function() { reject(tx.error); };
+        });
+    },
+
+    async remove(key) {
+        var db = await this.open();
+        return new Promise(function(resolve, reject) {
+            var tx = db.transaction(IDBHelper.storeName, 'readwrite');
+            tx.objectStore(IDBHelper.storeName).delete(key);
+            tx.oncomplete = function() { resolve(); };
+            tx.onerror = function() { reject(tx.error); };
+        });
+    },
+
+    async clearAll() {
+        var db = await this.open();
+        return new Promise(function(resolve, reject) {
+            var tx = db.transaction(IDBHelper.storeName, 'readwrite');
+            tx.objectStore(IDBHelper.storeName).clear();
+            tx.oncomplete = function() { resolve(); };
+            tx.onerror = function() { reject(tx.error); };
+        });
+    }
+};
+
+// 初始化IndexedDB存储：将已保存的数据加载到内存缓存
+async function initIndexedDBStorage() {
+    if (typeof indexedDB === 'undefined' || isPlusReady()) {
+        // 5+ App 环境继续使用原生存储，不启用IndexedDB
+        // 但确保内存缓存与localStorage同步（兼容旧逻辑）
+        try {
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                memoryCache[k] = localStorage.getItem(k);
+            }
+        } catch(e) {}
+        return;
+    }
+
+    try {
+        var keys = await IDBHelper.getAllKeys();
+        for (var j = 0; j < keys.length; j++) {
+            var key = keys[j];
+            var value = await IDBHelper.get(key);
+            if (value !== undefined && value !== null) {
+                // 如果localStorage也有相同key，以IndexedDB为准（更完整）
+                memoryCache[key] = value;
+            }
+        }
+        idbReady = true;
+        console.log('IndexedDB存储初始化完成，已加载 ' + keys.length + ' 个数据项');
+    } catch(err) {
+        console.warn('IndexedDB初始化失败，回退到localStorage:', err.message);
+        idbReady = false;
+        // 回退：加载localStorage数据到内存
+        try {
+            for (var m = 0; m < localStorage.length; m++) {
+                var lk = localStorage.key(m);
+                memoryCache[lk] = localStorage.getItem(lk);
+            }
+        } catch(e) {}
+    }
+
+    // 申请持久化存储（防止浏览器自动清理数据）
+    if (navigator.storage && navigator.storage.persist) {
+        try {
+            var persisted = await navigator.storage.persist();
+            console.log('持久化存储状态:', persisted ? '已持久化' : '未持久化（浏览器自动管理）');
+        } catch(e) {
+            console.log('无法申请持久化存储，浏览器将自动管理配额');
+        }
+    }
+}
+
+// 新增：删除存储项（与 storageSetItem/storageGetItem 配套）
+function storageRemoveItem(key) {
+    if (!key) return;
+    delete memoryCache[key];
+    if (isPlusReady()) {
+        try { plus.storage.removeItem(key); } catch(e) {}
+    }
+    try { localStorage.removeItem(key); } catch(e) {}
+    IDBHelper.remove(key).catch(function(err) {
+        console.warn('IndexedDB删除失败:', err);
+    });
+}
+
+// 新增：清空所有存储（谨慎使用）
+function storageClearAll() {
+    memoryCache = Object.create(null);
+    if (isPlusReady()) {
+        try {
+            var len = plus.storage.getLength();
+            for (var i = len - 1; i >= 0; i--) {
+                var key = plus.storage.key(i);
+                if (key) plus.storage.removeItem(key);
+            }
+        } catch(e) {}
+    }
+    try { localStorage.clear(); } catch(e) {}
+    IDBHelper.clearAll().catch(function(err) {
+        console.warn('IndexedDB清空失败:', err);
+    });
+}
     // 暴露全局
     window.openPlaylistModal = openPlaylistModal;
     window.closePlaylistModal = closePlaylistModal;
