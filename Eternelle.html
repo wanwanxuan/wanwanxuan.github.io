@@ -48815,11 +48815,20 @@ var MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
 // 加载指定梦角的聊天记录
 function loadChatHistory(dreamId) {
     var key = CHAT_HISTORY_PREFIX + dreamId;
-    // 使用统一存储适配层：
-    // 1. 优先读内存缓存（导入时通过 storageSetItem 已同步）
-    // 2. 其次读 plus.storage（5+ App 环境）
-    // 3. 再读 localStorage（兼容旧数据）
-    var saved = storageGetItem(key, null);
+    var saved = null;
+  
+    if (isPlusReady()) {
+        try {
+            saved = plus.storage.getItem(key);
+        } catch(e) {
+            console.warn('[聊天记录] 原生存储读取失败:', e);
+        }
+    }
+    if (!saved) {
+        try {
+            saved = localStorage.getItem(key);
+        } catch(e) {}
+    }
   
     if (saved) {
         try {
@@ -48849,7 +48858,23 @@ function saveChatHistory(dreamId, messages) {
         updatedAt: Date.now()
     };
     var str = JSON.stringify(data);
-    storageSetItem(key, str);
+  
+    if (isPlusReady()) {
+        try {
+            plus.storage.setItem(key, str);
+            console.log('[聊天记录] 已保存到原生存储（' + messages.length + '条消息）');
+        } catch(e) {
+            console.warn('[聊天记录] 原生存储失败:', e);
+            try {
+                localStorage.setItem(key, str);
+            } catch(e2) {}
+        }
+    } else {
+        try {
+            localStorage.setItem(key, str);
+            console.log('[聊天记录] 已保存到localStorage（' + messages.length + '条消息）');
+        } catch(e) {}
+    }
 }
 
 // 获取梦角信息
