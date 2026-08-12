@@ -18300,26 +18300,26 @@
         <div class="reply-lib-body" id="replyLibBody">
             <!-- 字卡列表标签页 -->
             <div class="reply-lib-tab-content active" data-tab-content="replies" id="replyLibRepliesTab">
-    <div class="reply-lib-search-row">
-        <input type="text" class="reply-lib-search-input" id="replyLibSearchInput" placeholder="搜索字卡..." oninput="filterReplyLibReplies()">
-        <button class="reply-lib-select-all-btn" id="replyLibSelectAllBtn" onclick="toggleSelectAllReplies()">全选</button>
-    </div>
-    <!-- 把添加按钮移到这里 -->
-    <div class="reply-lib-add-row">
-        <button class="reply-lib-add-btn" onclick="openReplyAddModal()">
-            <i data-lucide="plus"></i> 添加字卡
-        </button>
-    </div>
-    <div class="reply-lib-reply-list" id="replyLibReplyList">
-        <!-- 动态渲染字卡列表 -->
-    </div>
-    <div class="reply-lib-batch-actions" id="replyLibBatchActions" style="display:none;">
-        <span class="reply-lib-selected-count" id="replyLibSelectedCount">已选0条</span>
-        <button class="reply-lib-batch-btn" onclick="batchAddToGroup()">加入分组</button>
-        <button class="reply-lib-batch-btn block-btn" onclick="batchBlockReplies()">屏蔽</button>
-        <button class="reply-lib-batch-btn del-btn" onclick="batchDeleteReplies()">删除</button>
-    </div>
-</div>
+                <div class="reply-lib-search-row">
+                    <input type="text" class="reply-lib-search-input" id="replyLibSearchInput" placeholder="搜索字卡..." oninput="filterReplyLibReplies()">
+                    <button class="reply-lib-select-all-btn" id="replyLibSelectAllBtn" onclick="toggleSelectAllReplies()">全选</button>
+                </div>
+                <!-- 把添加按钮移到这里 -->
+                <div class="reply-lib-add-row">
+                    <button class="reply-lib-add-btn" onclick="openReplyAddModal()">
+                        <i data-lucide="plus"></i> 添加字卡
+                    </button>
+                </div>
+                <div class="reply-lib-reply-list" id="replyLibReplyList">
+                    <!-- 动态渲染字卡列表 -->
+                </div>
+                <div class="reply-lib-batch-actions" id="replyLibBatchActions" style="display:none;">
+                    <span class="reply-lib-selected-count" id="replyLibSelectedCount">已选0条</span>
+                    <button class="reply-lib-batch-btn" onclick="batchAddToGroup()">加入分组</button>
+                    <button class="reply-lib-batch-btn block-btn" onclick="batchBlockReplies()">屏蔽</button>
+                    <button class="reply-lib-batch-btn del-btn" onclick="batchDeleteReplies()">删除</button>
+                </div>
+            </div>
             <!-- 分组列表标签页 -->
             <div class="reply-lib-tab-content" data-tab-content="groups" id="replyLibGroupsTab">
                 <div class="reply-lib-group-list" id="replyLibGroupList">
@@ -48781,21 +48781,7 @@ var MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
 // 加载指定梦角的聊天记录
 function loadChatHistory(dreamId) {
     var key = CHAT_HISTORY_PREFIX + dreamId;
-    var saved = null;
-  
-    if (isPlusReady()) {
-        try {
-            saved = plus.storage.getItem(key);
-        } catch(e) {
-            console.warn('[聊天记录] 原生存储读取失败:', e);
-        }
-    }
-    if (!saved) {
-        try {
-            saved = localStorage.getItem(key);
-        } catch(e) {}
-    }
-  
+    var saved = storageGetItem(key, null);
     if (saved) {
         try {
             var data = JSON.parse(saved);
@@ -48824,23 +48810,9 @@ function saveChatHistory(dreamId, messages) {
         updatedAt: Date.now()
     };
     var str = JSON.stringify(data);
-  
-    if (isPlusReady()) {
-        try {
-            plus.storage.setItem(key, str);
-            console.log('[聊天记录] 已保存到原生存储（' + messages.length + '条消息）');
-        } catch(e) {
-            console.warn('[聊天记录] 原生存储失败:', e);
-            try {
-                localStorage.setItem(key, str);
-            } catch(e2) {}
-        }
-    } else {
-        try {
-            localStorage.setItem(key, str);
-            console.log('[聊天记录] 已保存到localStorage（' + messages.length + '条消息）');
-        } catch(e) {}
-    }
+    // 统一走 storageSetItem 写入通道（内存缓存 + localStorage + IndexedDB）
+    storageSetItem(key, str);
+    console.log('[聊天记录] 已保存，共 ' + messages.length + ' 条消息');
 }
 
 // 获取梦角信息
@@ -50566,7 +50538,7 @@ function renderChatDialogMessages() {
         });
     }
 
-            if (typeof lucide !== 'undefined') {
+        if (typeof lucide !== 'undefined') {
         requestAnimationFrame(function() { lucide.createIcons(); });
     }
 }
@@ -58269,165 +58241,6 @@ function cleanupAllChatTimers() {
 	            cleanupCallResources();
 	            stopVoiceDetection(); // 保证麦克风资源释放
 	        });
-// ============ 聊天性能优化 - 消息渲染数量限制与滚动加载 ============
-(function() {
-    // 保存原始渲染函数
-    var _origRender = window.renderChatDialogMessages;
-    if (typeof _origRender !== 'function') return;
-
-    // 优化参数
-    var RENDER_LIMIT = 80;      // 单次渲染最大消息数（性能临界值，可调整）
-    var LOAD_STEP = 30;         // 滚动加载更多时步长
-    var loadOffset = 0;         // 当前渲染起始偏移
-    var isLoading = false;      // 加载锁，防止重复触发
-
-    // ---------- 加载更多提示栏 ----------
-    function ensureLoadMoreBar(container) {
-        if (!container || document.getElementById('chatLoadMoreBar')) return;
-        var bar = document.createElement('div');
-        bar.id = 'chatLoadMoreBar';
-        bar.textContent = '向上滑动加载更多消息';
-        bar.style.cssText =
-            'text-align:center;padding:8px 0;font-size:12px;' +
-            'color:rgba(255,255,255,0.6);cursor:pointer;' +
-            'background:rgba(0,0,0,0.12);border-radius:4px;margin:4px 8px;';
-        bar.addEventListener('click', function() {
-            loadMoreMessages();
-        });
-        container.insertBefore(bar, container.firstChild);
-    }
-
-    function removeLoadMoreBar() {
-        var bar = document.getElementById('chatLoadMoreBar');
-        if (bar) bar.remove();
-    }
-
-    // ---------- 新的渲染函数（包装原函数） ----------
-    function optimizedRender() {
-        var container = document.getElementById('chatDialogMessages');
-        if (!container || !currentChatMessages) {
-            return _origRender();
-        }
-
-        var total = currentChatMessages.length;
-
-        // 消息较少时：直接走原渲染
-        if (total <= RENDER_LIMIT) {
-            loadOffset = 0;
-            removeLoadMoreBar();
-            var result = _origRender();
-            // 延迟更新图标，避免阻塞
-            if (typeof lucide !== 'undefined') {
-                requestAnimationFrame(function() { lucide.createIcons(); });
-            }
-            return result;
-        }
-
-        // 消息较多：只渲染最近 RENDER_LIMIT 条
-        loadOffset = total - RENDER_LIMIT;
-
-        // 临时用子集替换全局消息数组
-        var fullBackup = currentChatMessages;
-        currentChatMessages = fullBackup.slice(loadOffset);
-
-        var res = _origRender();
-
-        // 恢复完整消息引用（不影响数据完整性）
-        currentChatMessages = fullBackup;
-
-        // 显示加载更多提示
-        ensureLoadMoreBar(container);
-
-        // 延迟图标更新
-        if (typeof lucide !== 'undefined') {
-            requestAnimationFrame(function() { lucide.createIcons(); });
-        }
-
-        return res;
-    }
-
-    // ---------- 滚动加载更多 ----------
-    function loadMoreMessages() {
-        if (isLoading || loadOffset <= 0) return;
-
-        var container = document.getElementById('chatDialogMessages');
-        if (!container || !currentChatMessages) return;
-
-        isLoading = true;
-
-        var scrollHeightBefore = container.scrollHeight;
-
-        // 向前扩展渲染范围
-        var newOffset = Math.max(0, loadOffset - LOAD_STEP);
-        loadOffset = newOffset;
-
-        var fullBackup = currentChatMessages;
-        currentChatMessages = fullBackup.slice(newOffset);
-
-        _origRender();
-
-        currentChatMessages = fullBackup;
-
-        // 保持滚动位置（滚动高度差值补偿）
-        var scrollHeightAfter = container.scrollHeight;
-        container.scrollTop = scrollHeightAfter - scrollHeightBefore;
-
-        // 已到最顶部则移除提示
-        if (loadOffset === 0) {
-            removeLoadMoreBar();
-        }
-
-        if (typeof lucide !== 'undefined') {
-            requestAnimationFrame(function() { lucide.createIcons(); });
-        }
-
-        isLoading = false;
-    }
-
-    // 挂载到全局
-    window.loadMoreMessages = loadMoreMessages;
-    window.renderChatDialogMessages = optimizedRender;
-
-    // ---------- 滚动监听（被动模式） ----------
-    document.addEventListener('DOMContentLoaded', function() {
-        var container = document.getElementById('chatDialogMessages');
-        if (!container) return;
-
-        container.addEventListener('scroll', function(e) {
-            if (e.target.scrollTop < 30 && !isLoading && loadOffset > 0) {
-                loadMoreMessages();
-            }
-        }, { passive: true });
-    });
-
-    // ---------- 优化 scrollChatToBottom ----------
-    var _origScroll = window.scrollChatToBottom;
-    window.scrollChatToBottom = function() {
-        var container = document.getElementById('chatDialogMessages');
-        if (!container) return;
-
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-                container.scrollTop = container.scrollHeight;
-            });
-        });
-    };
-
-    // ---------- 补充：发送消息后的滚动优化 ----------
-    var _origSend = window.sendChatMessage;
-    if (typeof _origSend === 'function') {
-        window.sendChatMessage = function() {
-            var result = _origSend.apply(this, arguments);
-            var container = document.getElementById('chatDialogMessages');
-            if (container) {
-                setTimeout(function() {
-                    container.scrollTop = container.scrollHeight;
-                }, 120);
-            }
-            return result;
-        };
-    }
-})();
 // ============ 聊天性能优化 - 消息渲染数量限制与滚动加载 ============
 (function() {
     // 保存原始渲染函数
